@@ -34,6 +34,13 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
 - [ ] Reconnect behavior:
   - [ ] Preserve pending UI state cleanly after WS reconnect.
   - [ ] Avoid duplicate retries for one failed oversized send.
+- [ ] Update channel hardening:
+  - [ ] Add GitHub release/version listener to detect new app versions.
+  - [ ] Enable auto-update check on app launch (with safe defaults + user control).
+  - [ ] Add rollback flow in Settings for failed/bad updates.
+- [ ] Plugin/Skill validation:
+  - [ ] Add A/B testing harness for plugins and skills.
+  - [ ] Verify experiment telemetry and fallback behavior are working end-to-end.
 
 ## P1 - Quality Gates
 
