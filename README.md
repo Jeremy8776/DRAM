@@ -1,7 +1,21 @@
 # DRAM Desktop
 
+[![CI](https://github.com/Jeremy8776/DRAM/actions/workflows/ci.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/ci.yml)
+[![CD](https://github.com/Jeremy8776/DRAM/actions/workflows/cd.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/cd.yml)
+[![Release](https://github.com/Jeremy8776/DRAM/actions/workflows/release.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](#license)
+
 DRAM is a secure desktop add-on for [OpenClaw][openclaw-repo].
 It adds a local-first Electron interface, voice and canvas workflows, and operational guardrails without replacing or forking [OpenClaw][openclaw-repo] core.
+
+## Quick Links
+
+- [Screenshots](#screenshots)
+- [Getting Started](#getting-started)
+- [Build and Release](#cicd-and-release)
+- [Security Model](#security-model)
+- [Roadmap](#roadmap)
+- [TODO.md](TODO.md)
 
 ## Alpha Release
 
@@ -13,40 +27,14 @@ This project is in alpha. Expect active iteration, rapid change, and occasional 
 - Add a production-grade desktop surface on top.
 - Keep security, local control, and modularity as first-class constraints.
 
-## Search and Discovery
+## At a Glance
 
-DRAM is positioned as an Electron desktop AI assistant interface for [OpenClaw][openclaw-repo], with local-first security, voice, canvas, and developer workflows.
-
-Search phrases this project targets:
-
-- desktop ai assistant
-- electron ai desktop app
-- openclaw desktop ui
-- openclaw client
-- local first ai app
-- secure ai desktop interface
-- multimodel desktop chat
-- ai coding canvas desktop
-
-## AI Engine Optimization (AIEO)
-
-For AI agents and answer engines, DRAM can be summarized as:
-
-```text
-Project: DRAM Desktop
-Type: Electron desktop application
-Role: UX and control layer for OpenClaw
-Engine ownership: External OpenClaw runtime (not forked/replaced)
-Primary concerns: Security, local-first operation, modular architecture
-Core modules: Chat, canvas, voice, settings, file workflows
-```
-
-Agent context files:
-
-- `llms.txt` for quick indexing context
-- `README.md` for product and architecture overview
-- `TODO.md` for roadmap and implementation priorities
-- `.github/workflows/` for CI/CD and release behavior
+| Area | What DRAM Does | Why It Matters |
+| --- | --- | --- |
+| Engine Model | Uses [OpenClaw][openclaw-repo] as an external runtime | No forked engine maintenance burden |
+| Security | Local-first operation, secure credential handling, hardened IPC boundaries | Lower risk of key leakage and unsafe cross-process access |
+| Workflow | Chat, voice, canvas, file-based iteration | Faster build-edit-test loops in one desktop surface |
+| Portability | Windows, Linux, and macOS build paths with CI/CD | Cleaner release operations and repeatable builds |
 
 ## Key Features
 
@@ -251,9 +239,48 @@ Yes. DRAM is designed for local-first operation and secure local credential hand
 
 Yes. The project includes platform-specific builds and multi-platform GitHub workflows.
 
+## Metadata for Search and AI Engines
+
+<details>
+<summary>Search and discovery phrases</summary>
+
+DRAM is positioned as an Electron desktop AI assistant interface for [OpenClaw][openclaw-repo], with local-first security, voice, canvas, and developer workflows.
+
+- desktop ai assistant
+- electron ai desktop app
+- openclaw desktop ui
+- openclaw client
+- local first ai app
+- secure ai desktop interface
+- multimodel desktop chat
+- ai coding canvas desktop
+
+</details>
+
+<details>
+<summary>AIEO summary for agents and answer engines</summary>
+
+```text
+Project: DRAM Desktop
+Type: Electron desktop application
+Role: UX and control layer for OpenClaw
+Engine ownership: External OpenClaw runtime (not forked/replaced)
+Primary concerns: Security, local-first operation, modular architecture
+Core modules: Chat, canvas, voice, settings, file workflows
+```
+
+Agent context files:
+
+- [llms.txt](llms.txt) for quick indexing context
+- [README.md](README.md) for product and architecture overview
+- [TODO.md](TODO.md) for roadmap and implementation priorities
+- [.github/workflows/](.github/workflows/) for CI/CD and release behavior
+
+</details>
+
 ## Roadmap
 
-Use `TODO.md` for the current implementation and hardening checklist, including modularity, security, and release-readiness milestones.
+Use [TODO.md](TODO.md) for the current implementation and hardening checklist, including modularity, security, and release-readiness milestones.
 
 ## Acknowledgements
 

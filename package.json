@@ -1,7 +1,7 @@
 {
   "name": "dram-desktop",
   "version": "1.0.0",
-  "description": "DRAM - Desktop AI Assistant extension for OpenClaw",
+  "description": "Secure local-first desktop interface and workflow hub for OpenClaw",
   "type": "module",
   "main": "src/main/index-wrapper.cjs",
   "workspaces": [
@@ -15,6 +15,14 @@
     "email": "jeremy8776@gmail.com"
   },
   "license": "MIT",
+  "homepage": "https://github.com/Jeremy8776/DRAM#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jeremy8776/DRAM.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jeremy8776/DRAM/issues"
+  },
   "keywords": [
     "ai-assistant",
     "desktop-ai",
