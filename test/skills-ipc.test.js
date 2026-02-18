@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { registerSkillsHandlers } from '../src/main/ipc/skills.js';
+import { registerSkillsHandlers } from '../runtime/main/ipc/skills.js';
 
 function createIpcHarness() {
     const handlers = new Map();

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
 
-import { validateApiKey, validateUrl } from '../src/main/ipc-validation.js';
-import { setupConfigSync } from '../src/main/state/config-sync.js';
+import { validateApiKey, validateUrl } from '../runtime/main/ipc-validation.js';
+import { setupConfigSync } from '../runtime/main/state/config-sync.js';
 
 class FakeStateManager extends EventEmitter {
     constructor(state) {

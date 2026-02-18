@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { isPathWithinBaseDir } from '../src/main/ipc/path-guards.js';
+import { isPathWithinBaseDir } from '../runtime/main/ipc/path-guards.js';
 
 test('isPathWithinBaseDir allows files inside base directory', () => {
     const base = path.resolve('tmp', 'app-data');
@@ -49,4 +49,3 @@ test('isPathWithinBaseDir blocks symlink escapes when target exists', () => {
         fs.rmSync(root, { recursive: true, force: true });
     }
 });
-

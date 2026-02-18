@@ -360,10 +360,62 @@ function getModelDisplayName(modelId, fallbackProvider) {
     return value;
 }
 
+function formatDateKey(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function normalizeDateKey(rawDate) {
+    const value = String(rawDate || '').trim();
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    parsed.setHours(0, 0, 0, 0);
+    return formatDateKey(parsed);
+}
+
+function buildDenseDailySeries(rawDaily, selectedDays) {
+    const days = Math.max(1, Number(selectedDays || 30));
+    const byDate = new Map();
+
+    if (Array.isArray(rawDaily)) {
+        for (const day of rawDaily) {
+            const key = normalizeDateKey(day?.date || day?.day || day?.timestamp);
+            if (!key) continue;
+            const existing = byDate.get(key) || { cost: 0, tokens: 0 };
+            existing.cost += Number(day?.totalCost || day?.cost || 0);
+            existing.tokens += Number(day?.totalTokens || day?.tokens || 0);
+            byDate.set(key, existing);
+        }
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dense = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const key = formatDateKey(d);
+        const existing = byDate.get(key) || { cost: 0, tokens: 0 };
+        dense.push({
+            date: key,
+            cost: Number(existing.cost || 0),
+            tokens: Number(existing.tokens || 0)
+        });
+    }
+
+    return dense;
+}
+
 /**
  * Transform raw gateway data into UI-friendly format
  */
 function transformUsageData(statusData, costData) {
+    const selectedDays = Math.max(1, Number(costData?.days || currentTimeRange || 30));
     const stats = {
         totalCost: 0,
         totalTokens: 0,
@@ -378,7 +430,7 @@ function transformUsageData(statusData, costData) {
             inputTokens: 0,
             outputTokens: 0
         },
-        daily: []
+        daily: buildDenseDailySeries([], selectedDays)
     };
     const breakdownMap = new Map();
 
@@ -395,13 +447,9 @@ function transformUsageData(statusData, costData) {
             stats.totalRequests = costData.totals.requests || 0;
         }
 
-        // Store daily breakdown for chart
+        // Store daily breakdown for chart (always dense by selected range).
         if (costData.daily && Array.isArray(costData.daily)) {
-            stats.daily = costData.daily.map(day => ({
-                date: day.date,
-                cost: day.totalCost || 0,
-                tokens: day.totalTokens || 0
-            }));
+            stats.daily = buildDenseDailySeries(costData.daily, selectedDays);
 
             log.debug(' Daily data:', stats.daily.length, 'days');
 
@@ -482,7 +530,7 @@ function transformUsageData(statusData, costData) {
             stats.totalRequests = Object.values(stats.providers).reduce((sum, p) => sum + (p.requests || 0), 0);
         }
 
-        stats.days = costData.days || currentTimeRange;
+        stats.days = selectedDays;
         stats.updatedAt = costData.updatedAt || Date.now();
     }
 

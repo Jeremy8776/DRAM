@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { registerSystemHandlers } from '../src/main/ipc/system.js';
-import { clearLogBusForTests, emitLogLine } from '../src/main/log-bus.js';
+import { registerSystemHandlers } from '../runtime/main/ipc/system.js';
+import { clearLogBusForTests, emitLogLine } from '../runtime/main/log-bus.js';
 
 function createIpcHarness() {
     const handlers = new Map();

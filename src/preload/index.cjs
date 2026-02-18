@@ -3,6 +3,7 @@
  * Note: In sandboxed preload, only 'electron' module is available via require.
  * Path utilities are implemented in pure JS.
  */
+/** @typedef {import('../shared/types/preload.js').DramBridgeApi} DramBridgeApi */
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Pure JS path utilities (Node's path module isn't available in sandbox)
@@ -42,10 +43,15 @@ const pathUtils = {
     }
 };
 
+const CHANNEL_RE = /^[a-zA-Z0-9:._-]{1,96}$/;
+
 /**
  * Helper to wrap IPC calls with error handling
  */
 const safeInvoke = async (channel, ...args) => {
+    if (typeof channel !== 'string' || !CHANNEL_RE.test(channel)) {
+        throw new Error(`Invalid IPC channel: ${String(channel)}`);
+    }
     try {
         return await ipcRenderer.invoke(channel, ...args);
     } catch (err) {
@@ -54,7 +60,8 @@ const safeInvoke = async (channel, ...args) => {
     }
 };
 
-contextBridge.exposeInMainWorld('dram', {
+/** @type {DramBridgeApi} */
+const dramApi = {
     storage: {
         get: (key) => safeInvoke('storage:get', key),
         set: (key, value) => safeInvoke('storage:set', key, value),
@@ -210,4 +217,6 @@ contextBridge.exposeInMainWorld('dram', {
     },
     platform: typeof process !== 'undefined' ? process.platform : 'unknown',
     path: pathUtils
-});
+};
+
+contextBridge.exposeInMainWorld('dram', dramApi);

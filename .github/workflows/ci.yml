@@ -27,6 +27,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck (advisory)
+        run: npm run typecheck
+        continue-on-error: true
+
       - name: Test
         run: npm run test
 

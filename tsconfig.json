@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.js",
+    "src/**/*.cjs",
+    "src/**/*.mjs",
+    "packages/dram-plugin/src/**/*.ts",
+    "packages/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "resources/engine",
+    "test"
+  ]
+}

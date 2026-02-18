@@ -91,6 +91,20 @@ const LANGUAGE_BY_EXTENSION = {
     '.env': 'ini',
     '.txt': 'text'
 };
+const KNOWN_CANVAS_ASSET_MAP = Object.freeze({
+    'wizard-logic.impl.js': 'modules/wizard-logic.js',
+    'elements.js': 'modules/elements.js',
+    'renderer.js': 'modules/renderer.js',
+    'errors.js': 'modules/errors.js',
+    'connection-ui.js': 'modules/connection-ui.js',
+    'utils.js': 'modules/utils.js',
+    'rate-limits.js': 'modules/rate-limits.js',
+    'model-capabilities.js': 'modules/model-capabilities.js',
+    'chat-handler.js': 'modules/chat-handler.js',
+    'logger.js': 'modules/logger.js',
+    'wizard.js': 'modules/wizard.js',
+    'dialog.js': 'components/dialog.js'
+});
 const WINDOWS_RESERVED_NAMES = new Set([
     'CON',
     'PRN',
@@ -1178,13 +1192,54 @@ function stripEmbeddedCspMeta(html) {
     }
 }
 
+function rewriteKnownCanvasAssetReferences(html) {
+    const source = String(html || '');
+    if (!source) return source;
+    try {
+        const doc = new DOMParser().parseFromString(source, 'text/html');
+        let changed = false;
+
+        const rewriteAttr = (node, attrName) => {
+            const raw = String(node.getAttribute(attrName) || '').trim();
+            if (!raw) return;
+            const lower = raw.toLowerCase();
+            if (
+                lower.startsWith('http://')
+                || lower.startsWith('https://')
+                || lower.startsWith('dram://')
+                || lower.startsWith('data:')
+                || lower.startsWith('blob:')
+                || raw.startsWith('/')
+            ) {
+                return;
+            }
+            const fileName = getPathApi().basename(raw).toLowerCase();
+            const mapped = KNOWN_CANVAS_ASSET_MAP[fileName];
+            if (!mapped) return;
+            node.setAttribute(attrName, `dram://app/${mapped}`);
+            changed = true;
+        };
+
+        doc.querySelectorAll('script[src]').forEach((node) => rewriteAttr(node, 'src'));
+        doc.querySelectorAll('link[href]').forEach((node) => rewriteAttr(node, 'href'));
+
+        if (!changed || !doc.documentElement) return source;
+        const serialized = doc.documentElement.outerHTML;
+        return /<!doctype/i.test(source) ? `<!doctype html>\n${serialized}` : serialized;
+    } catch {
+        return source;
+    }
+}
+
 function rewriteInlineEventHandlers(html) {
     // Keep authored HTML handlers/scripts intact for the canvas sandbox runtime.
     return String(html || '');
 }
 
 function buildHtmlDocument(content) {
-    const sanitized = stripEmbeddedCspMeta(stripExternalFontLinks(content));
+    const sanitized = rewriteKnownCanvasAssetReferences(
+        stripEmbeddedCspMeta(stripExternalFontLinks(content))
+    );
     if (/<html[\s>]/i.test(sanitized)) return sanitized;
     return `<!doctype html>
 <html lang="en">

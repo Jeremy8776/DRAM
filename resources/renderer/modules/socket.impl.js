@@ -25,6 +25,9 @@ const DESKTOP_CANVAS_HINT = [
     '- Keep the answer concise and implementation-focused.',
     '[/DRAM_DESKTOP_CANVAS_CONTEXT]'
 ].join('\n');
+const VALID_FRAME_TYPES = new Set(['res', 'event', 'agent', 'chat', 'connected']);
+const MAX_INBOUND_FRAME_BYTES = 6_000_000;
+const MAX_OUTBOUND_REQUEST_BYTES = 4_650_000;
 const DRAM_CANVAS_FILE_CONTEXT_TAG = '[DRAM_CANVAS_FILE_CONTEXT]';
 const CANVAS_CONTEXT_CHIP_ID = 'canvas-context-chip';
 const FILE_ATTACHMENT_CONTEXT_TAG = '[DRAM_FILE_ATTACHMENTS]';
@@ -54,6 +57,69 @@ function estimateDataUrlBytes(dataUrl) {
     const comma = value.indexOf(',');
     if (comma < 0) return 0;
     return Math.floor((value.length - comma - 1) * 0.75);
+}
+
+function estimateJsonBytes(value) {
+    try {
+        return new TextEncoder().encode(JSON.stringify(value ?? {})).length;
+    } catch {
+        return Number.POSITIVE_INFINITY;
+    }
+}
+
+function mapImageAttachmentToWire(attachment) {
+    return {
+        fileName: attachment.name,
+        mimeType: attachment.type,
+        type: 'image',
+        content: attachment.data
+    };
+}
+
+function fitImageAttachmentsForTransport(requestId, params, images = []) {
+    const normalized = images.map((image, index) => ({
+        image,
+        index,
+        sizeBytes: Number(image?.size || 0) || estimateDataUrlBytes(image?.data || '')
+    }));
+
+    const keep = normalized.slice();
+    const dropped = [];
+    const buildEnvelope = (entries) => ({
+        type: 'req',
+        id: requestId,
+        method: 'chat.send',
+        params: {
+            ...params,
+            attachments: entries.length > 0
+                ? entries.map((entry) => mapImageAttachmentToWire(entry.image))
+                : undefined
+        }
+    });
+
+    while (keep.length > 0 && estimateJsonBytes(buildEnvelope(keep)) > MAX_OUTBOUND_REQUEST_BYTES) {
+        let largestIndex = 0;
+        for (let idx = 1; idx < keep.length; idx++) {
+            if (keep[idx].sizeBytes > keep[largestIndex].sizeBytes) {
+                largestIndex = idx;
+            }
+        }
+        const [removed] = keep.splice(largestIndex, 1);
+        if (removed) dropped.push(removed);
+    }
+
+    const keepSorted = keep.sort((left, right) => left.index - right.index);
+    const droppedSorted = dropped.sort((left, right) => left.index - right.index);
+    const finalEnvelope = buildEnvelope(keepSorted);
+    const finalBytes = estimateJsonBytes(finalEnvelope);
+
+    return {
+        fits: finalBytes <= MAX_OUTBOUND_REQUEST_BYTES,
+        requestBytes: finalBytes,
+        keptImages: keepSorted.map((entry) => entry.image),
+        droppedImages: droppedSorted.map((entry) => entry.image),
+        attachmentsPayload: keepSorted.map((entry) => mapImageAttachmentToWire(entry.image))
+    };
 }
 
 function inferAttachmentLanguage(att) {
@@ -152,6 +218,49 @@ function buildOutboundMessage(text) {
     if (!shouldInjectDesktopCanvasHint(text)) return text;
     if (text.includes('[DRAM_DESKTOP_CANVAS_CONTEXT]')) return text;
     return `${text}\n\n${DESKTOP_CANVAS_HINT}`;
+}
+
+function isRecord(value) {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeInboundFrame(rawFrame) {
+    if (!isRecord(rawFrame)) return null;
+    const frame = /** @type {Record<string, unknown>} */ (rawFrame);
+    if (typeof frame.type !== 'string' || !VALID_FRAME_TYPES.has(frame.type)) return null;
+    if (frame.id != null && typeof frame.id !== 'string') return null;
+    if (frame.type === 'event' && typeof frame.event !== 'string') return null;
+    return frame;
+}
+
+function parseInboundFrame(rawData) {
+    if (typeof rawData === 'string') {
+        if (rawData.length > MAX_INBOUND_FRAME_BYTES) {
+            log.warn('Inbound frame dropped: exceeds local parse limit');
+            return null;
+        }
+        try {
+            return normalizeInboundFrame(JSON.parse(rawData));
+        } catch (err) {
+            console.error('[Socket] Failed to parse message:', err, rawData.slice(0, 200));
+            return null;
+        }
+    }
+    if (isRecord(rawData)) {
+        return normalizeInboundFrame(rawData);
+    }
+    return null;
+}
+
+function sendGatewayRequest(method, params = {}, idPrefix = 'req') {
+    const requestId = `${idPrefix}-${Date.now()}`;
+    window.dram.socket.send({
+        type: 'req',
+        id: requestId,
+        method,
+        params
+    });
+    return requestId;
 }
 
 async function getCanvasPromptContextSnippet(userText) {
@@ -375,19 +484,9 @@ export async function connect() {
  * @param {string} data - Raw JSON string from the socket.
  */
 export function handleMessage(data) {
-    let msg;
-    try {
-        // Handle both string and object data from IPC
-        if (typeof data === 'string') {
-            msg = JSON.parse(data);
-        } else if (typeof data === 'object' && data !== null) {
-            msg = data;
-        } else {
-            console.error('[Socket] Unknown data type:', typeof data);
-            return;
-        }
-    } catch (err) {
-        console.error('[Socket] Failed to parse message:', err, data?.slice?.(0, 200));
+    const msg = parseInboundFrame(data);
+    if (!msg) {
+        log.warn('Dropped invalid socket frame');
         return;
     }
 
@@ -661,12 +760,7 @@ export function loadHistory() {
     historyLoadPending = true;
     lastHistoryLoadTime = now;
 
-    window.dram.socket.send({
-        type: 'req',
-        id: `history-${Date.now()}`,
-        method: 'chat.history',
-        params: { sessionKey: state.sessionKey, limit: 50 }
-    });
+    sendGatewayRequest('chat.history', { sessionKey: state.sessionKey, limit: 50 }, 'history');
 
     // Reset pending flag after a timeout (in case response doesn't come back)
     setTimeout(() => { historyLoadPending = false; }, 5000);
@@ -683,12 +777,7 @@ export function resetChat() {
 
     console.log('[Socket] Resetting chat session:', state.sessionKey);
 
-    window.dram.socket.send({
-        type: 'req',
-        id: `reset-${Date.now()}`,
-        method: 'sessions.reset',
-        params: { key: state.sessionKey }
-    });
+    sendGatewayRequest('sessions.reset', { key: state.sessionKey }, 'reset');
 
     // Clear local state and UI immediately
     clearMessages();
@@ -761,15 +850,6 @@ export async function sendMessage() {
         }
     }
 
-    const attachments = imageAttachments.map(att => ({
-        fileName: att.name,
-        mimeType: att.type,
-        type: 'image',
-        content: att.data
-    }));
-
-    // Add user message to UI
-    addMessage('user', text, false, true, { images: imageAttachments.map((a) => a.data).filter(Boolean) });
     let outboundMessage = text;
     try {
         const payload = await buildOutboundMessageContextPackage(text);
@@ -796,6 +876,42 @@ export async function sendMessage() {
         : null;
 
     currentRequestId = `send-${Date.now()}`;
+    const idempotencyKey = `dram-${Date.now()}`;
+    const requestParamsBase = {
+        sessionKey: state.sessionKey,
+        model: manualModelId || undefined,
+        message: outboundMessage,
+        idempotencyKey
+    };
+    const fitResult = fitImageAttachmentsForTransport(currentRequestId, requestParamsBase, imageAttachments);
+    if (!fitResult.fits) {
+        addSystemMessage(
+            elements,
+            `Message is too large to send (${formatAttachmentSize(fitResult.requestBytes)} > ${formatAttachmentSize(MAX_OUTBOUND_REQUEST_BYTES)}). Reduce attachment/context size and try again.`
+        );
+        currentRequestId = null;
+        return;
+    }
+    if (fitResult.droppedImages.length > 0) {
+        const droppedLabel = fitResult.droppedImages.map((image) => image?.name || 'image').join(', ');
+        addSystemMessage(
+            elements,
+            `Skipped ${fitResult.droppedImages.length} attachment(s) for transport safety: ${droppedLabel}.`
+        );
+    }
+
+    imageAttachments = fitResult.keptImages;
+    hasAttachments = imageAttachments.length > 0 || fileAttachments.length > 0;
+    if (!text && !hasAttachments) {
+        currentRequestId = null;
+        return;
+    }
+
+    const attachments = fitResult.attachmentsPayload;
+
+    // Add user message to UI
+    addMessage('user', text, false, true, { images: imageAttachments.map((a) => a.data).filter(Boolean) });
+
     trackRun(currentRequestId, state.sessionKey);
     showTypingIndicator(activeModelName, currentRequestId);
 
@@ -812,7 +928,7 @@ export async function sendMessage() {
                 model: manualModelId || undefined,
                 message: outboundMessage,
                 attachments: attachments.length > 0 ? attachments : undefined,
-                idempotencyKey: `dram-${Date.now()}`
+                idempotencyKey
             }
         });
     } catch (err) {
@@ -849,12 +965,7 @@ export function cancelActiveRequest() {
     if (!currentRequestId || !state.connected) return;
 
     // Send abort request to engine
-    window.dram.socket.send({
-        type: 'req',
-        id: `abort-${Date.now()}`,
-        method: 'chat.abort',
-        params: { sessionKey: state.sessionKey, runId: currentRequestId }
-    });
+    sendGatewayRequest('chat.abort', { sessionKey: state.sessionKey, runId: currentRequestId }, 'abort');
 
     clearRequestTimeout(currentRequestId);
     addSystemMessage(elements, 'GENERATION STOPPED');

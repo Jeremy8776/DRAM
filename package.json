@@ -3,7 +3,7 @@
   "version": "0.1.5",
   "description": "Secure local-first desktop layer for OpenClaw featuring voice, canvas, and hardened security guardrails.",
   "type": "module",
-  "main": "src/main/index-wrapper.cjs",
+  "main": "runtime/main/index-wrapper.cjs",
   "workspaces": [
     "packages/*"
   ],
@@ -36,21 +36,24 @@
     "coding-canvas"
   ],
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
+    "start": "npm run build:runtime && electron .",
+    "dev": "npm run build:runtime && electron . --dev",
     "dev:fresh": "node scripts/dev-fresh.cjs",
     "dev:wizard": "node scripts/dev-wizard.cjs",
-    "build": "npm run bundle-engine && electron-builder",
-    "build:win": "npm run bundle-engine && electron-builder --win",
-    "build:mac": "npm run bundle-engine && electron-builder --mac",
-    "build:linux": "npm run bundle-engine && electron-builder --linux",
+    "build:runtime": "node scripts/build-runtime.cjs",
+    "build": "npm run build:runtime && npm run bundle-engine && electron-builder",
+    "build:win": "npm run build:runtime && npm run bundle-engine && electron-builder --win",
+    "build:mac": "npm run build:runtime && npm run bundle-engine && electron-builder --mac",
+    "build:linux": "npm run build:runtime && npm run bundle-engine && electron-builder --linux",
     "bundle-engine": "node scripts/bundle-engine.cjs",
     "check:ipc": "node scripts/audit-ipc.cjs",
     "check:loc": "node scripts/check-file-loc.cjs --root src --root packages/dram-plugin/src --warn 500 --fail 700",
     "check:loc:desktop": "node scripts/check-file-loc.cjs --root src --warn 500 --fail 700",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "test:desktop": "node test/desktop-security.test.js && node test/path-guards.test.js",
     "test:ipc": "npm run check:ipc && node test/system-ipc.test.js && node test/skills-ipc.test.js && node test/plugins-ipc.test.js",
-    "test": "npm run test:desktop && npm run test:ipc",
+    "test": "npm run build:runtime && npm run test:desktop && npm run test:ipc",
     "setup": "python -m pip install openai-whisper",
     "lint": "eslint src/",
     "audit": "npm audit --production"
@@ -74,7 +77,7 @@
       "buildResources": "build"
     },
     "files": [
-      "src/**/*",
+      "runtime/**/*",
       "resources/**/*",
       "!resources/engine/node_modules/.cache",
       "!resources/engine/node_modules/.pnpm",

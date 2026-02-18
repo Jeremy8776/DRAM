@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { registerModelHandlers } from '../src/main/ipc/models.js';
-import { registerPluginHandlers } from '../src/main/ipc/plugins.js';
+import { registerModelHandlers } from '../runtime/main/ipc/models.js';
+import { registerPluginHandlers } from '../runtime/main/ipc/plugins.js';
 
 function createIpcHarness() {
     const handlers = new Map();

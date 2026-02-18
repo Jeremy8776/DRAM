@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "runtime",
+    "rootDir": "src",
+    "allowJs": false,
+    "checkJs": false,
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.mts",
+    "src/**/*.cts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "runtime",
+    "resources/engine",
+    "test"
+  ]
+}
