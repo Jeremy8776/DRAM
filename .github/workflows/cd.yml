@@ -6,9 +6,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    timeout-minutes: 45
+  build:
+    name: Build (${{ matrix.target.name }})
+    runs-on: ${{ matrix.target.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: windows
+            os: windows-latest
+            script: npm run build:win
+            artifact: dram-win-build
+          - name: linux
+            os: ubuntu-latest
+            script: npm run build:linux
+            artifact: dram-linux-build
+          - name: macos
+            os: macos-latest
+            script: npm run build:mac
+            artifact: dram-macos-build
 
     steps:
       - name: Checkout
@@ -18,18 +35,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Windows artifact
-        run: npm run build:win
+      - name: Build artifact
+        run: ${{ matrix.target.script }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dram-win-build
+          name: ${{ matrix.target.artifact }}
           path: dist/**
           if-no-files-found: error
           retention-days: 14

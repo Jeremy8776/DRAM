@@ -1,46 +1,81 @@
 # DRAM Desktop
 
-DRAM is a desktop add-on for OpenClaw. It provides a secure local UI layer, chat tooling, voice, and canvas workflows without replacing OpenClaw itself.
+DRAM is a secure desktop add-on for OpenClaw.
+It adds a local-first Electron interface, voice and canvas workflows, and operational guardrails without replacing or forking OpenClaw core.
 
-## Alpha Notice
+## Alpha Release
 
-This project is in alpha. Expect breaking changes while core architecture and UX are still moving.
+This project is in alpha. Expect active iteration, rapid change, and occasional breaking behavior while architecture and UX are being hardened.
 
 ## Mission
 
-- Keep OpenClaw external and intact.
-- Add a production-grade desktop experience around it.
-- Prioritize security, local-first behavior, and user control.
+- Preserve OpenClaw as the external engine.
+- Add a production-grade desktop surface on top.
+- Keep security, local control, and modularity as first-class constraints.
 
-## What DRAM Is
+## Key Features
 
-- Electron desktop app (`src/main`, `src/preload`, `src/renderer`)
-- DRAM plugin package (`packages/dram-plugin`)
-- Symbiotic integration with an existing OpenClaw install
-- Secure key handling through OS keychain and strict renderer boundaries
+### Secure and Private
 
-## What DRAM Is Not
+- Local-first architecture; user data stays on the machine by default.
+- OS keychain integration for credential storage.
+- Strict process boundaries (main, preload, renderer) with controlled IPC.
+- CSP and renderer hardening to reduce injection risk.
 
-- Not a fork or replacement of OpenClaw core
-- Not a bundle of upstream OpenClaw source in this repo
-- Not a cloud-first chat product
+### Advanced Chat and Workspace
 
-## Features
+- Multi-model routing through OpenClaw.
+- Tabbed chat sessions and session-aware workflows.
+- Voice mode support.
+- File attachments and workspace-linked interactions.
+- Canvas for code previews, generated content, and edit iterations.
 
-- Multi-model chat through OpenClaw
-- Canvas workflow for generated code and previews
-- Voice interaction mode
-- File attachments and workspace-aware actions
-- Config sync with `~/.openclaw/openclaw.json`
+### Symbiotic OpenClaw Integration
 
-## Security Posture
+- Auto-discovery of existing OpenClaw installation and config.
+- Non-destructive config adoption.
+- Bidirectional sync between CLI-side changes and desktop state.
+- Gateway-managed runtime connection with reconnect behavior.
 
-- Context isolation enabled
-- Renderer sandboxing enabled
-- Strict CSP policy
-- No Node integration in renderer
-- Credentials kept in secure OS storage
-- Local loopback gateway usage (no external port exposure by default)
+## How It Works
+
+DRAM does not replace OpenClaw. It runs as a desktop layer that talks to the OpenClaw gateway.
+
+```text
++-------------------------------------------------------------+
+| DRAM Desktop (Electron)                                     |
+|                                                             |
+|  +------------------+   +------------------+                |
+|  | Renderer UI      |   | Canvas / Voice   |                |
+|  | Chat / Settings  |   | File UX          |                |
+|  +------------------+   +------------------+                |
+|             |                          |                    |
+|             +------------ IPC ---------+                    |
+|                          |                                  |
+|                    Main / Preload                           |
++--------------------------|----------------------------------+
+                           | WebSocket / mgmt requests
++--------------------------v----------------------------------+
+| OpenClaw (external engine)                                  |
+| Gateway | Agents | Plugins | Models | Skills | Config       |
++-------------------------------------------------------------+
+```
+
+## User Flows
+
+### Existing OpenClaw User
+
+1. Launch DRAM.
+2. DRAM discovers OpenClaw and existing config.
+3. User confirms adoption of settings.
+4. DRAM uses the same engine/config without breaking CLI workflow.
+
+### New User
+
+1. Launch DRAM.
+2. Follow first-run setup.
+3. Configure model/provider credentials.
+4. Start chatting with local desktop controls.
 
 ## Getting Started
 
@@ -48,9 +83,9 @@ This project is in alpha. Expect breaking changes while core architecture and UX
 
 - Node.js 18+
 - npm 9+
-- OpenClaw (can be discovered/managed by DRAM)
+- OpenClaw available (or installable by your setup flow)
 
-### Install
+### Install and Run
 
 ```bash
 git clone https://github.com/Jeremy8776/DRAM.git
@@ -59,42 +94,109 @@ npm install
 npm run dev
 ```
 
-## Build
+### Build
 
 ```bash
 npm run build
 ```
 
+Platform-specific build commands are available:
+
+```bash
+npm run build:win
+npm run build:linux
+npm run build:mac
+```
+
 Build output is written to `dist/`.
 
-## Development Commands
+## Configuration
+
+DRAM interoperates with OpenClaw configuration at:
+
+- macOS/Linux: `~/.openclaw/openclaw.json`
+- Windows: `%USERPROFILE%\\.openclaw\\openclaw.json`
+
+Behavior:
+
+- DRAM watches and syncs config changes.
+- DRAM writes config in compatible OpenClaw format.
+- CLI and desktop remain aligned.
+
+## Development
+
+### Repository Layout
+
+```text
+src/
+  main/                 Electron main process
+  preload/              Context bridge and safe API surface
+  renderer/             Frontend modules and styles
+packages/
+  dram-plugin/          DRAM plugin package
+scripts/                Tooling, checks, and maintenance helpers
+test/                   Security and IPC test suites
+.github/workflows/      CI, CD, and release automation
+TODO.md                 Roadmap and hardening plan
+```
+
+### Key Commands
 
 - `npm run dev`
 - `npm run lint`
 - `npm run test`
+- `npm run check:ipc`
 - `npm run check:loc`
 - `npm run build`
 
-## Repository Layout
-
-```text
-src/                    Electron app (main, preload, renderer)
-packages/dram-plugin/   DRAM plugin package
-scripts/                Tooling and guards
-test/                   Test suites
-.github/workflows/      CI/CD/release automation
-TODO.md                 Roadmap and hardening tasks
-```
-
 ## CI/CD and Release
 
-- `ci.yml`: lint, tests, LOC guard
-- `cd.yml`: build artifacts on main and manual trigger
-- `release.yml`: tag-driven GitHub release pipeline
+- `ci.yml`: lint, tests, and LOC guard.
+- `cd.yml`: build artifacts for Windows, Linux, and macOS on `main` and manual trigger.
+- `release.yml`: tag-based release (`v*.*.*`) with multi-platform artifacts published to GitHub Releases.
+
+## Security Model
+
+Security is a core mission requirement.
+
+- Sensitive keys are kept out of renderer and protected through secure storage patterns.
+- IPC surfaces are explicit and audited.
+- External access is constrained; loopback gateway usage is default.
+- Project includes security tests and path guard tests.
+
+## Troubleshooting
+
+### OpenClaw Not Found
+
+- Confirm CLI is on PATH (`where openclaw` on Windows, `which openclaw` on macOS/Linux).
+- Verify `~/.openclaw/openclaw.json` exists and is valid.
+- Restart DRAM after install/config changes.
+
+### Config Validation Errors
+
+If OpenClaw reports unknown config keys, run:
+
+```bash
+openclaw doctor --fix
+```
+
+Then restart DRAM.
+
+### Attachment and Payload Errors
+
+If you hit websocket max payload or model attachment limits:
+
+- Reduce image/file size before send.
+- Prefer lower-size formats for large screenshots.
+- Use model-appropriate attachment behavior when multimodal limits apply.
 
 ## Roadmap
 
-See `TODO.md` for the active checklist (security, modularity, release hardening, refactor plan).
+Use `TODO.md` for the current implementation and hardening checklist, including modularity, security, and release-readiness milestones.
+
+## Acknowledgements
+
+DRAM is built to extend the OpenClaw ecosystem. Credit to the OpenClaw project and community.
 
 ## License
 
