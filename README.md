@@ -5,8 +5,11 @@
 [![Release](https://github.com/Jeremy8776/DRAM/actions/workflows/release.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](#license)
 
-DRAM is a secure desktop add-on for [OpenClaw][openclaw-repo].
-It adds a local-first Electron interface, voice and canvas workflows, and operational guardrails without replacing or forking [OpenClaw][openclaw-repo] core.
+DRAM is a secure, local-first desktop interface for [OpenClaw][openclaw-repo].
+It provides chat, voice, and canvas workflows with operational safety guardrails without replacing the external engine.
+
+> [!IMPORTANT]
+> **Alpha Release**: This project is in alpha. Expect active iteration, rapid change, and occasional breaking behavior while architecture and UX are being hardened.
 
 ## Quick Links
 
@@ -17,10 +20,6 @@ It adds a local-first Electron interface, voice and canvas workflows, and operat
 - [Security Model](#security-model)
 - [Roadmap](#roadmap)
 - [TODO.md](TODO.md)
-
-## Alpha Release
-
-This project is in alpha. Expect active iteration, rapid change, and occasional breaking behavior while architecture and UX are being hardened.
 
 ## Mission
 
