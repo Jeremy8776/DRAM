@@ -6,6 +6,7 @@ on:
       - 'src/**'
       - 'packages/dram-plugin/src/**'
       - 'scripts/check-file-loc.cjs'
+      - 'scripts/loc-baseline.json'
       - 'package.json'
       - '.github/workflows/loc-guard.yml'
   push:
@@ -16,6 +17,7 @@ on:
       - 'src/**'
       - 'packages/dram-plugin/src/**'
       - 'scripts/check-file-loc.cjs'
+      - 'scripts/loc-baseline.json'
       - 'package.json'
       - '.github/workflows/loc-guard.yml'
 
@@ -60,4 +62,5 @@ jobs:
             --root packages/dram-plugin/src \
             --warn 500 \
             --fail 700 \
+            --baseline scripts/loc-baseline.json \
             --files-from changed-files.txt
