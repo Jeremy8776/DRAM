@@ -114,26 +114,15 @@ DRAM does not replace [OpenClaw][openclaw-repo]. It runs as a desktop layer that
 
 ## Screenshots
 
-### Fresh Chat
-![Fresh Chat](docs/screenshots/Fresh-chat.png)
+| Fresh Chat | Canvas (Code) | Canvas (Render) |
+| --- | --- | --- |
+| [<img src="docs/screenshots/Fresh-chat.png" alt="Fresh Chat" width="100%">](docs/screenshots/Fresh-chat.png) | [<img src="docs/screenshots/Canvas-code.png" alt="Canvas Code" width="100%">](docs/screenshots/Canvas-code.png) | [<img src="docs/screenshots/Canvas-render.png" alt="Canvas Render" width="100%">](docs/screenshots/Canvas-render.png) |
+| Voice (Fullscreen) | Settings | Memory |
+| [<img src="docs/screenshots/Voice-fullscreen.png" alt="Voice Fullscreen" width="100%">](docs/screenshots/Voice-fullscreen.png) | [<img src="docs/screenshots/Settings.png" alt="Settings" width="100%">](docs/screenshots/Settings.png) | [<img src="docs/screenshots/Memory.png" alt="Memory" width="100%">](docs/screenshots/Memory.png) |
+| Usage |  |  |
+| [<img src="docs/screenshots/Usage.png" alt="Usage" width="100%">](docs/screenshots/Usage.png) |  |  |
 
-### Canvas (Code)
-![Canvas Code](docs/screenshots/Canvas-code.png)
-
-### Canvas (Render)
-![Canvas Render](docs/screenshots/Canvas-render.png)
-
-### Voice (Fullscreen)
-![Voice Fullscreen](docs/screenshots/Voice-fullscreen.png)
-
-### Settings
-![Settings](docs/screenshots/Settings.png)
-
-### Memory
-![Memory](docs/screenshots/Memory.png)
-
-### Usage
-![Usage](docs/screenshots/Usage.png)
+Click any image to open full size.
 
 ## Getting Started
 
