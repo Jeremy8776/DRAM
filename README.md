@@ -12,6 +12,7 @@ It adds a local-first Electron interface, voice and canvas workflows, and operat
 
 - [Screenshots](#screenshots)
 - [Getting Started](#getting-started)
+- [Documentation](#documentation)
 - [Build and Release](#cicd-and-release)
 - [Security Model](#security-model)
 - [Roadmap](#roadmap)
@@ -190,6 +191,15 @@ TODO.md                 Roadmap and hardening plan
 - `cd.yml`: build artifacts for Windows, Linux, and macOS on `main` and manual trigger.
 - `release.yml`: tag-based release (`v*.*.*`) with multi-platform artifacts published to GitHub Releases.
 
+## Documentation
+
+- [Documentation Hub](docs/README.md)
+- [Architecture](docs/architecture.md)
+- [Security](docs/security.md)
+- [Release Process](docs/release.md)
+- [Contributing](docs/contributing.md)
+- [Machine-readable context](llms.txt)
+
 ## Security Model
 
 Security is a core mission requirement.
@@ -238,45 +248,6 @@ Yes. DRAM is designed for local-first operation and secure local credential hand
 ### Can DRAM build for Windows, Linux, and macOS?
 
 Yes. The project includes platform-specific builds and multi-platform GitHub workflows.
-
-## Metadata for Search and AI Engines
-
-<details>
-<summary>Search and discovery phrases</summary>
-
-DRAM is positioned as an Electron desktop AI assistant interface for [OpenClaw][openclaw-repo], with local-first security, voice, canvas, and developer workflows.
-
-- desktop ai assistant
-- electron ai desktop app
-- openclaw desktop ui
-- openclaw client
-- local first ai app
-- secure ai desktop interface
-- multimodel desktop chat
-- ai coding canvas desktop
-
-</details>
-
-<details>
-<summary>AIEO summary for agents and answer engines</summary>
-
-```text
-Project: DRAM Desktop
-Type: Electron desktop application
-Role: UX and control layer for OpenClaw
-Engine ownership: External OpenClaw runtime (not forked/replaced)
-Primary concerns: Security, local-first operation, modular architecture
-Core modules: Chat, canvas, voice, settings, file workflows
-```
-
-Agent context files:
-
-- [llms.txt](llms.txt) for quick indexing context
-- [README.md](README.md) for product and architecture overview
-- [TODO.md](TODO.md) for roadmap and implementation priorities
-- [.github/workflows/](.github/workflows/) for CI/CD and release behavior
-
-</details>
 
 ## Roadmap
 
