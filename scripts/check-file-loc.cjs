@@ -25,7 +25,6 @@ function getArgs(name) {
 const rootArgs = getArgs('--root');
 const roots = rootArgs.length > 0 ? rootArgs : ['src'];
 const filesFromArg = getArg('--files-from', null);
-const baselineArg = getArg('--baseline', null);
 const warnLimit = Number.parseInt(getArg('--warn', '500'), 10);
 const failLimit = Number.parseInt(getArg('--fail', '700'), 10);
 
@@ -62,40 +61,6 @@ for (const rootDir of rootDirs) {
     console.error(`[loc-check] Root directory does not exist: ${rootDir}`);
     process.exit(2);
   }
-}
-
-function loadBaseline() {
-  if (!baselineArg) return new Map();
-  const baselinePath = path.resolve(process.cwd(), baselineArg);
-  if (!fs.existsSync(baselinePath)) {
-    console.error(`[loc-check] --baseline file does not exist: ${baselinePath}`);
-    process.exit(2);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
-  } catch (error) {
-    console.error(`[loc-check] Failed to parse baseline JSON: ${baselinePath}`);
-    process.exit(2);
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    console.error('[loc-check] Invalid baseline format: expected an object of { "path": lineCount }.');
-    process.exit(2);
-  }
-
-  const baseline = new Map();
-  for (const [file, value] of Object.entries(parsed)) {
-    const num = Number(value);
-    if (!Number.isFinite(num) || num < 0) {
-      console.error(`[loc-check] Invalid baseline line count for "${file}": ${value}`);
-      process.exit(2);
-    }
-    const norm = file.replace(/\\/g, '/');
-    baseline.set(norm, num);
-  }
-  return baseline;
 }
 
 function isCodeFile(filePath) {
@@ -164,7 +129,6 @@ function collectFiles() {
 }
 
 const files = collectFiles();
-const baseline = loadBaseline();
 if (files.length === 0) {
   console.log('[loc-check] PASS - no matching source files to check.');
   process.exit(0);
@@ -172,21 +136,13 @@ if (files.length === 0) {
 
 const rows = files.map((filePath) => {
   const lines = countLines(filePath);
-  const rel = path.relative(process.cwd(), filePath).replace(/\\/g, '/');
-  const baselineMax = baseline.get(rel);
   let status = 'OK';
-  let reason = null;
   if (lines > failLimit) status = 'FAIL';
   else if (lines > warnLimit) status = 'WARN';
-  if (status === 'FAIL' && Number.isFinite(baselineMax) && lines <= baselineMax) {
-    status = 'BASELINE';
-    reason = `allowed by baseline (<= ${baselineMax})`;
-  }
   return {
     status,
     lines,
-    file: rel,
-    reason,
+    file: path.relative(process.cwd(), filePath).replace(/\\/g, '/'),
   };
 });
 
@@ -199,14 +155,10 @@ if (flagged.length === 0) {
 }
 
 console.log(`[loc-check] Policy: warn > ${warnLimit}, fail > ${failLimit}`);
-if (baselineArg) {
-  console.log(`[loc-check] Baseline: ${baselineArg} (${baseline.size} entr${baseline.size === 1 ? 'y' : 'ies'})`);
-}
 console.log(`[loc-check] Checked ${rows.length} file(s).`);
 console.log('[loc-check] Files above threshold:');
 for (const r of flagged) {
-  const suffix = r.reason ? `  (${r.reason})` : '';
-  console.log(`- [${r.status}] ${String(r.lines).padStart(5, ' ')} lines  ${r.file}${suffix}`);
+  console.log(`- [${r.status}] ${String(r.lines).padStart(5, ' ')} lines  ${r.file}`);
 }
 
 const failures = flagged.filter((r) => r.status === 'FAIL');
