@@ -79,11 +79,26 @@ DRAM does not replace [OpenClaw][openclaw-repo]. It runs as a desktop layer that
 
 ## Screenshots
 
-Add product screenshots in `docs/screenshots/` and update the image paths below.
+### Fresh Chat
+![Fresh Chat](docs/screenshots/Fresh-chat.png)
 
-![Chat](docs/screenshots/chat.png)
-![Canvas](docs/screenshots/canvas.png)
-![Settings](docs/screenshots/settings.png)
+### Canvas (Code)
+![Canvas Code](docs/screenshots/Canvas-code.png)
+
+### Canvas (Render)
+![Canvas Render](docs/screenshots/Canvas-render.png)
+
+### Voice (Fullscreen)
+![Voice Fullscreen](docs/screenshots/Voice-fullscreen.png)
+
+### Settings
+![Settings](docs/screenshots/Settings.png)
+
+### Memory
+![Memory](docs/screenshots/Memory.png)
+
+### Usage
+![Usage](docs/screenshots/Usage.png)
 
 ## Getting Started
 
