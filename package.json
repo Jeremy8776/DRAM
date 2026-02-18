@@ -12,7 +12,7 @@
   },
   "author": {
     "name": "DRAM",
-    "email": "opensource@dram.dev"
+    "email": "jeremy8776@gmail.com"
   },
   "license": "MIT",
   "scripts": {
@@ -89,7 +89,7 @@
       ],
       "icon": "resources/png/icon-256.png",
       "category": "Utility",
-      "maintainer": "DRAM <opensource@dram.dev>"
+      "maintainer": "DRAM <jeremy8776@gmail.com>"
     }
   }
 }
