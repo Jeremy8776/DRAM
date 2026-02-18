@@ -1,7 +1,7 @@
 {
     "name": "dram-core",
-    "version": "1.0.0",
-    "description": "DRAM Core Plugin for OpenClaw",
+    "version": "0.1.5",
+    "description": "Core desktop integration plugin for OpenClaw",
     "type": "module",
     "main": "dist/index.js",
     "exports": {

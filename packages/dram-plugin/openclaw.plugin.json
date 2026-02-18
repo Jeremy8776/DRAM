@@ -1,7 +1,7 @@
 {
     "id": "dram-core",
     "name": "DRAM Security & Logic Suite",
-    "version": "1.0.0",
+    "version": "0.1.5",
     "description": "Native OS Keychain encryption and specialized DRAM media tools.",
     "author": "DRAM Team",
     "homepage": "https://github.com/Jeremy8776/DRAM",

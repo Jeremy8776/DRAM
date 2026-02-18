@@ -51,7 +51,7 @@ export function registerBridgeHandlers(ipcMain, stateManager, windowManager, deb
         ok: true,
         payload: {
           type: 'hello-ok',
-          version: '1.0.0-dram',
+          version: '0.1.5-dram',
           meta: { name: 'DRAM Secure Gateway', role: 'operator' }
         }
       }));

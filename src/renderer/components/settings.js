@@ -63,7 +63,7 @@ export function renderSettingsPage({
 
             <div class="dashboard-sidebar-footer">
                 <span class="sidebar-footer-label">System</span>
-                <span class="sidebar-footer-value" id="app-version">DRAM // SYSTEM CORE v1.0.0</span>
+                <span class="sidebar-footer-value" id="app-version">DRAM // SYSTEM CORE v0.1.5</span>
             </div>
         </nav>
 

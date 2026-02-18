@@ -1,6 +1,6 @@
 {
   "name": "dram-desktop",
-  "version": "1.0.0",
+  "version": "0.1.5",
   "description": "Secure local-first desktop layer for OpenClaw featuring voice, canvas, and hardened security guardrails.",
   "type": "module",
   "main": "src/main/index-wrapper.cjs",
