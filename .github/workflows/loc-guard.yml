@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'src/**'
-      - 'dram-engine/src/**'
+      - 'packages/dram-plugin/src/**'
       - 'scripts/check-file-loc.cjs'
       - 'package.json'
       - '.github/workflows/loc-guard.yml'
@@ -14,7 +14,7 @@ on:
       - master
     paths:
       - 'src/**'
-      - 'dram-engine/src/**'
+      - 'packages/dram-plugin/src/**'
       - 'scripts/check-file-loc.cjs'
       - 'package.json'
       - '.github/workflows/loc-guard.yml'
@@ -41,11 +41,9 @@ jobs:
           fi
           HEAD_SHA="${{ github.sha }}"
 
-          # New branch pushes can have an all-zero before SHA.
           if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" || -z "$BASE_SHA" ]]; then
             git diff-tree --no-commit-id --name-only -r "$HEAD_SHA" > changed-files.txt
           else
-            # Ensure base commit exists locally without fetching full history.
             if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
               git fetch --no-tags --depth=1 origin "$BASE_SHA"
             fi
@@ -59,7 +57,7 @@ jobs:
         run: |
           node scripts/check-file-loc.cjs \
             --root src \
-            --root dram-engine/src \
+            --root packages/dram-plugin/src \
             --warn 500 \
             --fail 700 \
             --files-from changed-files.txt

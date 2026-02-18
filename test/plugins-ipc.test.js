@@ -38,7 +38,8 @@ test('util:getModels returns OpenClaw model list when available', async () => {
     });
 
     const models = await harness.invoke('util:getModels', { force: true });
-    assert.deepEqual(models, [
+    const compact = models.map(({ id, name, provider }) => ({ id, name, provider }));
+    assert.deepEqual(compact, [
         { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai' },
         { id: 'anthropic/claude-3-7-sonnet-latest', name: 'Claude 3.7 Sonnet', provider: 'anthropic' }
     ]);

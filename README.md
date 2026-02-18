@@ -1,179 +1,101 @@
 # DRAM Desktop
 
-**DRAM** - Desktop AI Assistant powered by OpenClaw.
+DRAM is a desktop add-on for OpenClaw. It provides a secure local UI layer, chat tooling, voice, and canvas workflows without replacing OpenClaw itself.
 
-DRAM Desktop is a secure, local-first, native Electron application that provides an enhanced UI/UX layer for OpenClaw. Instead of bundling its own AI engine, DRAM works symbiotically with your existing OpenClaw installation, enhancing it with a beautiful desktop interface, voice mode, canvas visualizations, and secure credential management.
+## Alpha Notice
 
-## ⚠️ Alpha Release
+This project is in alpha. Expect breaking changes while core architecture and UX are still moving.
 
-This software is currently in an **Alpha** state of development. It is being released for testing and development purposes. Features may be incomplete, unstable, or subject to breaking changes. Use at your own risk.
+## Mission
 
-## Key Features
+- Keep OpenClaw external and intact.
+- Add a production-grade desktop experience around it.
+- Prioritize security, local-first behavior, and user control.
 
-### 🔒 Secure and Private
-- **Local-First Architecture**: Your data stays on your machine.
-- **OS Keychain Integration**: API keys and credentials are encrypted using your OS keychain, never stored in plain text.
-- **Context Isolation**: Strict separation between app logic and renderer processes.
+## What DRAM Is
 
-### 💬 Advanced Chat Interface
-- **Multi-Model Support**: Seamlessly switch between Claude, GPT, Gemini, and local models via OpenClaw.
-- **Tabs System**: Manage multiple chat sessions simultaneously with a browser-like tab interface.
-- **Voice Mode**: Real-time voice interaction with waveform visualization.
-- **File Attachments**: Drag-and-drop support for analyzing documents and images.
+- Electron desktop app (`src/main`, `src/preload`, `src/renderer`)
+- DRAM plugin package (`packages/dram-plugin`)
+- Symbiotic integration with an existing OpenClaw install
+- Secure key handling through OS keychain and strict renderer boundaries
 
-### 🧩 Symbiotic OpenClaw Integration
-- **Auto-Discovery**: Automatically detects existing OpenClaw installations.
-- **Settings Adoption**: Imports your existing OpenClaw configuration on first launch.
-- **Bidirectional Sync**: Changes made in DRAM or via CLI stay synchronized.
-- **Version Management**: Install, update, or rollback OpenClaw versions from within DRAM.
+## What DRAM Is Not
+
+- Not a fork or replacement of OpenClaw core
+- Not a bundle of upstream OpenClaw source in this repo
+- Not a cloud-first chat product
+
+## Features
+
+- Multi-model chat through OpenClaw
+- Canvas workflow for generated code and previews
+- Voice interaction mode
+- File attachments and workspace-aware actions
+- Config sync with `~/.openclaw/openclaw.json`
+
+## Security Posture
+
+- Context isolation enabled
+- Renderer sandboxing enabled
+- Strict CSP policy
+- No Node integration in renderer
+- Credentials kept in secure OS storage
+- Local loopback gateway usage (no external port exposure by default)
 
 ## Getting Started
 
 ### Prerequisites
-- **Node.js**: v18 or later
-- **npm** (v9+)
-- **OpenClaw** (optional - DRAM can install it for you)
 
-### Installation
+- Node.js 18+
+- npm 9+
+- OpenClaw (can be discovered/managed by DRAM)
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Jeremy8776/DRAM.git
-   cd DRAM
-   ```
+### Install
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/Jeremy8776/DRAM.git
+cd DRAM
+npm install
+npm run dev
+```
 
-3. **Run in development mode**
-   ```bash
-   npm run dev
-   ```
-   
-   On first launch, DRAM will:
-   - Detect if OpenClaw is already installed
-   - If found: Show your existing settings for approval
-   - If not found: Install OpenClaw automatically and guide you through setup
-
-### Building for Production
+## Build
 
 ```bash
 npm run build
 ```
 
-This creates platform-specific binaries in the `dist/` folder.
+Build output is written to `dist/`.
 
-## How It Works
+## Development Commands
 
-### Symbiotic Architecture
+- `npm run dev`
+- `npm run lint`
+- `npm run test`
+- `npm run check:loc`
+- `npm run build`
 
-```
-┌─────────────────────────────────────────┐
-│         DRAM Desktop (Electron)          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Enhanced UI │ Security │ Voice     │ │
-│  │  Canvas │ File Handling │ Tray      │ │
-│  └─────────────────────────────────────┘ │
-│              WebSocket/API               │
-└─────────────────────────────────────────┘
-                    │
-                    ▼ discovers & manages
-┌─────────────────────────────────────────┐
-│           OpenClaw (External)           │
-│  ┌─────────────────────────────────────┐ │
-│  │  Gateway │ Agents │ Plugins │ CLI  │ │
-│  │  Config │ Models │ Skills           │ │
-│  └─────────────────────────────────────┘ │
-│         ~/.openclaw/openclaw.json        │
-└─────────────────────────────────────────┘
+## Repository Layout
+
+```text
+src/                    Electron app (main, preload, renderer)
+packages/dram-plugin/   DRAM plugin package
+scripts/                Tooling and guards
+test/                   Test suites
+.github/workflows/      CI/CD/release automation
+TODO.md                 Roadmap and hardening tasks
 ```
 
-### User Flows
+## CI/CD and Release
 
-**Existing OpenClaw User:**
-1. Launch DRAM
-2. "We found your OpenClaw installation!"
-3. Preview detected settings (models, plugins, workspace)
-4. Click "Import & Enhance" → DRAM adopts everything
-5. Your CLI continues to work exactly as before
+- `ci.yml`: lint, tests, LOC guard
+- `cd.yml`: build artifacts on main and manual trigger
+- `release.yml`: tag-driven GitHub release pipeline
 
-**New User:**
-1. Launch DRAM  
-2. "Let's set up your AI assistant"
-3. DRAM installs OpenClaw automatically
-4. Walk through API key setup
-5. Ready to chat!
+## Roadmap
 
-## Configuration
-
-### Config Location
-DRAM uses OpenClaw's native configuration format at:
-- **macOS/Linux**: `~/.openclaw/openclaw.json`
-- **Windows**: `%USERPROFILE%\.openclaw\openclaw.json`
-
-### Synchronization
-- DRAM watches the config file for changes (e.g., from CLI usage)
-- Changes in DRAM are written in native OpenClaw format
-- CLI and Desktop stay perfectly in sync
-
-### Backup & Restore
-- Create manual backups of your OpenClaw config from Settings → Gateway
-- Restore from any previous backup if needed
-
-## Development
-
-### Project Structure
-```
-dram-desktop/
-├── src/
-│   ├── main/           # Electron main process
-│   │   ├── ipc/        # IPC handlers (including OpenClaw management)
-│   │   └── engine/     # OpenClaw integration
-│   ├── preload/        # Secure Context Bridge
-│   └── renderer/       # Frontend UI
-├── packages/
-│   └── dram-plugin/    # DRAM Plugin for OpenClaw
-└── scripts/            # Build and maintenance scripts
-```
-
-### Key Commands
-- `npm run dev`: Start the app in development mode
-- `npm run build`: Build for production
-- `npm run bundle-engine`: Bundle OpenClaw (optional fallback)
-- `npm test`: Run tests
-
-## Security
-
-DRAM prioritizes security:
-- **Context Isolation**: Enabled to prevent prototype pollution.
-- **Sandboxing**: Renderer processes are sandboxed.
-- **Content Security Policy**: Strict CSP to prevent XSS.
-- **No Node Integration**: Node.js APIs are not exposed to the renderer.
-- **Secure Storage**: All credentials stored in OS keychain.
-
-## Troubleshooting
-
-### OpenClaw Not Found
-If DRAM can't find OpenClaw:
-1. Make sure `openclaw` is in your PATH: `which openclaw` (macOS/Linux) or `where openclaw` (Windows)
-2. Or install it manually: `npm install -g openclaw`
-3. Restart DRAM
-
-### Config Sync Issues
-If changes from CLI aren't reflected in DRAM:
-1. Settings → Gateway → Create Backup (to be safe)
-2. Restart DRAM (file watcher restarts)
-
-### Version Compatibility
-DRAM works with OpenClaw v2.x and later. Use Settings → Gateway to check or change versions.
-
-## Acknowledgements
-
-This project is built upon the [OpenClaw](https://github.com/openclaw/openclaw) engine.
-Special thanks to the OpenClaw team and community for establishing the foundation of this project.
+See `TODO.md` for the active checklist (security, modularity, release hardening, refactor plan).
 
 ## License
 
-MIT - DRAM
+MIT
