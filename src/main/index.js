@@ -69,6 +69,8 @@ if (!gotTheLock) {
     try {
       // 1. Register Protocol
       const rendererDir = path.resolve(__dirname, '../renderer');
+      const appRootDir = path.resolve(__dirname, '../..');
+      const sharedResourcesDir = path.resolve(appRootDir, 'resources');
 
       protocol.handle('dram', async (request) => {
         let urlPath = request.url.replace('dram://app/', '');
@@ -78,13 +80,19 @@ if (!gotTheLock) {
           urlPath = 'index.html';
         }
 
-        // Support subdirectories and prevent traversal
-        const filePath = path.join(rendererDir, urlPath);
+        const normalizedUrlPath = urlPath.replace(/^\/+/, '');
+        const useSharedResources = normalizedUrlPath.startsWith('resources/');
+        const baseDir = useSharedResources ? sharedResourcesDir : rendererDir;
+        const relativePath = useSharedResources
+          ? normalizedUrlPath.slice('resources/'.length)
+          : normalizedUrlPath;
+        const filePath = path.join(baseDir, relativePath);
+        const baseDirWithSep = `${baseDir}${path.sep}`;
 
         try {
           // Security: Prevent path traversal
           const resolvedPath = path.resolve(filePath);
-          if (!resolvedPath.startsWith(rendererDir + path.sep) && resolvedPath !== rendererDir && resolvedPath !== path.join(rendererDir, 'index.html')) {
+          if (!resolvedPath.startsWith(baseDirWithSep) && resolvedPath !== baseDir) {
             console.error(`[Protocol] Traversal attempt blocked: ${urlPath}`);
             return new Response('Access Denied', { status: 403 });
           }
@@ -94,7 +102,7 @@ if (!gotTheLock) {
             data = await fs.readFile(resolvedPath);
           } catch (readErr) {
             // Fallback for modules if not found in root (legacy support)
-            if (!urlPath.includes('/') && !urlPath.includes('\\')) {
+            if (!useSharedResources && !relativePath.includes('/') && !relativePath.includes('\\')) {
               const fallbackPath = path.join(rendererDir, 'modules', urlPath);
               try {
                 data = await fs.readFile(fallbackPath);
