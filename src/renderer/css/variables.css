@@ -1,0 +1,147 @@
+:root {
+    /* Sophisticated Dark Mode Palette */
+    --bg-deep: #030304;
+    --bg-base: #060607;
+    --bg-surface: #0a0a0c;
+    --bg-elevated: #111114;
+    --bg-hover: #18181c;
+
+    /* Deep Royal Purple - Premium & Deep */
+    --accent: #7c3aed;
+    --accent-subtle: rgba(124, 58, 237, 0.1);
+    --accent-glow: rgba(124, 58, 237, 0.2);
+
+    /* ═══════════════════════════════════════════
+       SEMANTIC COLORS - Status & Feedback
+       Use these instead of hardcoded hex values
+       ═══════════════════════════════════════════ */
+
+    /* Success - Green */
+    --color-success: #22c55e;
+    --color-success-subtle: rgba(34, 197, 94, 0.1);
+    --color-success-glow: rgba(34, 197, 94, 0.3);
+
+    /* Warning - Amber/Yellow */
+    --color-warning: #f59e0b;
+    --color-warning-subtle: rgba(245, 158, 11, 0.1);
+    --color-warning-glow: rgba(245, 158, 11, 0.3);
+
+    /* Error/Danger - Red */
+    --color-error: #ef4444;
+    --color-error-subtle: rgba(239, 68, 68, 0.1);
+    --color-error-glow: rgba(239, 68, 68, 0.3);
+
+    /* Info - Blue */
+    --color-info: #3b82f6;
+    --color-info-subtle: rgba(59, 130, 246, 0.1);
+    --color-info-glow: rgba(59, 130, 246, 0.3);
+
+    /* Legacy aliases for compatibility */
+    --success: var(--color-success);
+    --warning: var(--color-warning);
+    --error: var(--color-error);
+    --danger: var(--color-error);
+
+    /* Neutral Hardware Grays */
+    --text-primary: #e2e2e7;
+    --text-secondary: #8e8e93;
+    --text-tertiary: #48484a;
+
+    /* Structure & Precision */
+    --border: #1c1c1e;
+    --border-subtle: #141416;
+    --shadow-tactile: 0 4px 12px rgba(0, 0, 0, 0.6);
+
+    /* ═══════════════════════════════════════════
+       FOCUS STATES - Accessibility
+       ═══════════════════════════════════════════ */
+    --focus-ring-color: var(--accent);
+    --focus-ring-offset: 2px;
+    --focus-ring-width: 2px;
+    --focus-ring: var(--focus-ring-width) solid var(--focus-ring-color);
+
+    /* System Typography */
+    --radius: 2px;
+    --font-sans: 'Inter Variable',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+    --font-mono: 'JetBrains Mono',
+        'SFMono-Regular',
+        Consolas,
+        monospace;
+
+    /* ═══════════════════════════════════════════
+       TYPOGRAPHY SCALE - Unified Type System
+       Based on 1.25 modular scale for harmony
+       Minimum: 11px for WCAG accessibility
+       ═══════════════════════════════════════════ */
+
+    /* Size Scale (raw values) */
+    --text-2xl: 32px;
+    /* Hero text, large displays */
+    --text-xl: 24px;
+    /* Page titles */
+    --text-lg: 18px;
+    /* Section headings */
+    --text-md: 16px;
+    /* Subheadings */
+    --text-base: 14px;
+    /* Body text, default */
+    --text-sm: 12px;
+    /* Secondary text, captions */
+    --text-xs: 11px;
+    /* Labels, hints (minimum readable) */
+    --text-2xs: 10px;
+    /* Micro labels */
+
+    /* Semantic Aliases (use these in components) */
+    --font-size-heading: var(--text-lg);
+    --font-size-subheading: var(--text-md);
+    --font-size-body: var(--text-base);
+    --font-size-caption: var(--text-sm);
+    --font-size-label: var(--text-xs);
+    --font-size-mono: var(--text-sm);
+    --font-size-code: var(--text-sm);
+
+    /* Line Heights */
+    --line-height-tight: 1.2;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.6;
+
+    /* Letter Spacing System */
+    --tracking-title: 0.02em;
+    --tracking-kicker: 0.32em;
+    --tracking-section: 0.2em;
+    --tracking-label-wide: 0.18em;
+    --tracking-nav: 0.12em;
+    --tracking-label: 0.1em;
+    --tracking-meta: 0.05em;
+    --tracking-dense: 0.08em;
+
+    /* Font Weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* High-Density Spacing (8px Grid) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    /* Layout Rhythm */
+    --layout-page-header-y: var(--space-6);
+    --layout-page-header-x: var(--space-8);
+    --layout-page-content-x: var(--space-8);
+    --layout-pane-nav-y: var(--space-5);
+    --layout-pane-nav-x: var(--space-6);
+    --layout-pane-width: 224px;
+}

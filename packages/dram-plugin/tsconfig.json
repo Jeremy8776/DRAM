@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "lib": [
+            "ESNext"
+        ],
+        "strict": true,
+        "declaration": true,
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "paths": {
+            "@mariozechner/openclaw-plugin-sdk": [
+                "../../node_modules/openclaw/dist/plugin-sdk/plugin-sdk/index.d.ts"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

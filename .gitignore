@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Electron
+*.asar
+
+# Coverage
+coverage/
+
+# Cache
+.cache/
+.npm/
+
+# Generated Resources
+resources/engine/
+
+.reference/
+
+# Codex notes
+.codex/
+.claude/
+.serena/
+
+# Agent & System folders
+.agent/
+Microsoft/
+.git_backup/
+.tmp-device/
+
+# Local helper dumps
+openclaw_help.txt
+gateway_help.txt
+help_gateway.txt

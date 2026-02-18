@@ -1,0 +1,26 @@
+{
+    "name": "dram-core",
+    "version": "1.0.0",
+    "description": "DRAM Core Plugin for OpenClaw",
+    "type": "module",
+    "main": "dist/index.js",
+    "exports": {
+        ".": "./dist/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w"
+    },
+    "dependencies": {
+        "zod": "^3.22.4",
+        "@sinclair/typebox": "0.34.48"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3"
+    },
+    "openclaw": {
+        "extensions": [
+            "./dist/index.js"
+        ]
+    }
+}

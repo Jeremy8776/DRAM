@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>DRAM Setup</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #E8E3D5;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 500px;
+      padding: 40px;
+    }
+    
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    
+    h1 {
+      font-size: 28px;
+      font-weight: 300;
+      margin-bottom: 10px;
+      color: #F6C453;
+    }
+    
+    .subtitle {
+      color: #7B7F87;
+      margin-bottom: 40px;
+    }
+    
+    .status {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    
+    .stage {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7B7F87;
+      margin-bottom: 8px;
+    }
+    
+    .message {
+      font-size: 16px;
+      color: #E8E3D5;
+      margin-bottom: 20px;
+    }
+    
+    .progress-container {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #F6C453, #F2A65A);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      font-size: 12px;
+      color: #7B7F87;
+      margin-top: 10px;
+    }
+    
+    .details {
+      font-size: 11px;
+      color: #5a5d63;
+      margin-top: 20px;
+      font-family: monospace;
+    }
+    
+    .btn {
+      background: #F6C453;
+      color: #0a0a0f;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+    }
+    
+    .btn:hover {
+      background: #F2A65A;
+    }
+    
+    .error {
+      color: #E23D2D;
+      display: none;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(246, 196, 83, 0.2);
+      border-top-color: #F6C453;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">DRAM</div>
+    <h1>DRAM Setup</h1>
+    <p class="subtitle">Installing the Neural Engine...</p>
+    
+    <div class="status" id="status">
+      <div class="spinner" id="spinner"></div>
+      <div class="stage" id="stage">Initializing</div>
+      <div class="message" id="message">Preparing installation...</div>
+      
+      <div class="progress-container">
+        <div class="progress-bar" id="progress"></div>
+      </div>
+      
+      <div class="progress-text" id="progress-text">0%</div>
+      <div class="details" id="details"></div>
+    </div>
+    
+    <button class="btn" id="continueBtn">Continue</button>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const message = document.getElementById('message');
+    const progress = document.getElementById('progress');
+    const progressText = document.getElementById('progress-text');
+    const details = document.getElementById('details');
+    const spinner = document.getElementById('spinner');
+    const continueBtn = document.getElementById('continueBtn');
+    const error = document.getElementById('error');
+
+    // Listen for progress updates from main process
+    window.electronAPI.onInstallProgress((data) => {
+      stage.textContent = data.stage;
+      message.textContent = data.message;
+      progress.style.width = data.progress + '%';
+      progressText.textContent = data.progress + '%';
+      
+      if (data.stage === 'complete') {
+        spinner.style.display = 'none';
+        continueBtn.style.display = 'inline-block';
+        continueBtn.addEventListener('click', () => {
+          window.electronAPI.continueToApp();
+        });
+      }
+      
+      if (data.stage === 'error') {
+        spinner.style.display = 'none';
+        error.style.display = 'block';
+        error.textContent = 'Error: ' + data.message;
+      }
+    });
+
+    // Start installation
+    window.electronAPI.startInstallation();
+  </script>
+</body>
+</html>

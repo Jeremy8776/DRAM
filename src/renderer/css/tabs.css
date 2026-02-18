@@ -1,0 +1,132 @@
+/**
+ * DRAM - Tab System Styles
+ * Premium "Floating" Chrome-style tabs
+ */
+.chat-tabs-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: 48px;
+    /* Match sidebar brand height for perfect alignment */
+    padding: 0 var(--space-5);
+    background: var(--bg-base);
+    /* Match overall background */
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-app-region: no-drag;
+    /* Ensure tabs are interactive if in a drag region */
+}
+
+.chat-tabs-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.chat-tabs-list {
+    display: flex;
+    gap: var(--space-2);
+    /* Increased gap for floating look */
+    align-items: center;
+}
+
+.chat-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    /* More rounded for button look */
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.chat-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chat-tab.active {
+    background: var(--bg-elevated);
+    color: var(--accent);
+    border-color: var(--accent-subtle);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    z-index: 2;
+}
+
+.chat-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.chat-tab .tab-name {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-tab .tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.2s ease;
+    margin-right: -4px;
+}
+
+.chat-tab:hover .tab-close,
+.chat-tab.active .tab-close {
+    opacity: 0.6;
+}
+
+.chat-tab .tab-close:hover {
+    opacity: 1 !important;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-error);
+}
+
+.chat-tab.dragging {
+    opacity: 0.5;
+    border: 1px dashed var(--accent);
+}
+
+.add-tab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.add-tab-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent-subtle);
+    color: var(--accent);
+    transform: rotate(90deg);
+}

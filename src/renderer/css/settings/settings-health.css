@@ -1,0 +1,82 @@
+/**
+ * DRAM Desktop - Settings Health Styles
+ */
+
+/* ===== Health Diagnostics ===== */
+.health-diagnostics {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.health-check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.health-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.health-icon.pass {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.health-icon.warn {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.health-icon.fail {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.health-icon.unknown {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+}
+
+.health-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.health-name {
+    font-weight: 500;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.health-message {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-4);
+}
+
+.health-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}

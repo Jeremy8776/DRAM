@@ -1,0 +1,352 @@
+/* Voice Toast (floating mini player) */
+.voice-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 240px;
+    aspect-ratio: 1 / 1;
+    background: #000000;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.voice-toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.voice-toast-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.voice-toast-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.voice-toast-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+}
+
+.voice-toast-dot.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+.voice-toast-label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.voice-toast-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.voice-toast-waveform-wrap {
+    flex: 1;
+    border-radius: 12px;
+    border: none;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.voice-toast-waveform {
+    width: 100%;
+    height: 100%;
+    opacity: 0.85;
+}
+
+.voice-toast-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.voice-toast-btn.danger {
+    color: #ef4444;
+}
+
+.voice-toast-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.voice-toast-btn.danger:hover {
+    color: #ef4444;
+}
+
+/* Voice Thinking State */
+.voice-inline-ui.thinking {
+    border-color: var(--accent);
+}
+
+.voice-inline-ui.thinking .status-dot {
+    background: var(--accent);
+}
+
+/* Thinking dots animation */
+.thinking-dots {
+    display: inline-flex;
+    gap: 3px;
+    margin-right: 6px;
+}
+
+.thinking-dots .dot {
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: thinkingBounce 1.4s infinite ease-in-out both;
+}
+
+.thinking-dots .dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.thinking-dots .dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.thinking-dots .dot:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes thinkingBounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/**
+ * DRAM Voice Mode Styles
+ * Aesthetic: Deep immersion, pulsing light, glassmorphism.
+ */
+
+.voice-overlay {
+    position: absolute;
+    top: 48px;
+    /* Below top bar */
+    left: 0;
+    right: 0;
+    bottom: 120px;
+    /* Above input zone */
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.voice-overlay.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 56px;
+    right: 0;
+    bottom: 0;
+    width: calc(100% - 56px);
+    background: rgba(6, 6, 8, 0.92);
+    backdrop-filter: blur(26px);
+    z-index: 1000;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+.voice-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.voice-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    position: relative;
+}
+
+.voice-overlay.fullscreen .voice-content {
+    max-width: none;
+    width: 100%;
+    height: 100%;
+    padding: 32px 32px 120px;
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.voice-status {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 40px;
+    text-shadow: 0 0 10px var(--accent-glow);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.waveform-container {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 40px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#voice-waveform {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 15px var(--accent-glow));
+}
+
+.voice-transcript {
+    font-family: var(--font-main);
+    font-size: var(--text-lg);
+    color: #fff;
+    text-align: center;
+    min-height: 2em;
+    line-height: var(--line-height-relaxed);
+    opacity: 0.8;
+}
+
+.voice-close-btn {
+    position: absolute;
+    top: -20px;
+    right: 0;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: var(--text-2xl);
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.2s;
+}
+
+.voice-close-btn:hover {
+    opacity: 1;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+
+.voice-overlay.fullscreen .waveform-container {
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    margin-bottom: 0;
+    min-height: 0;
+}
+
+.voice-overlay.fullscreen .voice-status {
+    position: static;
+    transform: none;
+    margin: 12px auto;
+    text-align: center;
+    font-size: var(--text-lg);
+    letter-spacing: 3px;
+    order: 2;
+}
+
+.voice-overlay.fullscreen .voice-transcript {
+    max-height: 18vh;
+    overflow: auto;
+    order: 0;
+    margin: 0 auto 12px;
+    text-align: center;
+    max-width: 80%;
+}
+
+.voice-close-label {
+    display: none;
+}
+
+.voice-overlay.fullscreen .voice-close-btn {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 14px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+    order: 3;
+}
+
+.voice-overlay.fullscreen .voice-close-label {
+    display: inline;
+    font-size: var(--text-sm);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.voice-overlay.fullscreen .voice-close-btn:hover {
+    background: var(--accent-subtle);
+}

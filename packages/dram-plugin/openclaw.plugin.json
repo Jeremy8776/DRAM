@@ -1,0 +1,36 @@
+{
+    "id": "dram-core",
+    "name": "DRAM Security & Logic Suite",
+    "version": "1.0.0",
+    "description": "Native OS Keychain encryption and specialized DRAM media tools.",
+    "author": "DRAM Team",
+    "homepage": "https://github.com/Jeremy8776/DRAM",
+    "configSchema": {
+        "type": "object",
+        "properties": {
+            "useOSKeychain": {
+                "type": "boolean",
+                "description": "Enable native OS Keychain integration for API keys.",
+                "default": true
+            },
+            "enableLogicCanvas": {
+                "type": "boolean",
+                "description": "Support for advanced visual logic rendering.",
+                "default": true
+            }
+        },
+        "required": [
+            "useOSKeychain"
+        ]
+    },
+    "uiHints": {
+        "useOSKeychain": {
+            "label": "Secure Vault",
+            "help": "If enabled, DRAM will use the macOS/Windows Keychain for all secrets."
+        },
+        "enableLogicCanvas": {
+            "label": "Visual Canvas",
+            "help": "Enable the interactive Logic Canvas for complex model chains."
+        }
+    }
+}

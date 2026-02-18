@@ -1,0 +1,291 @@
+/* Memory View (DAM Style) - Aligned with Rams Minimalism */
+.memory-viewport {
+    background: var(--bg-base);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Windows title bar reservation */
+.platform-win32 .memory-viewport {
+    padding-top: 48px;
+    -webkit-app-region: drag;
+}
+
+.platform-win32 .memory-viewport::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--layout-pane-width);
+    width: 1px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+}
+
+.platform-win32 .memory-viewport>* {
+    -webkit-app-region: no-drag;
+}
+
+.memory-dam-container {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Asset Browser (DAM Sidebar) - Aligned with .dashboard-sidebar */
+.memory-browser {
+    width: var(--layout-pane-width);
+    background: var(--bg-base);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: var(--layout-pane-nav-y) 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.browser-header {
+    padding: var(--layout-pane-nav-y) var(--layout-pane-nav-x) var(--space-3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.browser-title {
+    font-size: var(--text-2xs);
+    font-weight: 600;
+    color: rgba(226, 226, 231, 0.45);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label-wide);
+}
+
+.asset-list {
+    flex: 1;
+    overflow: visible;
+    min-height: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.asset-item {
+    position: relative;
+    padding: var(--space-3) var(--layout-pane-nav-x) var(--space-3) calc(var(--layout-pane-nav-x) + 10px);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    border-radius: 0;
+    border: none;
+}
+
+.asset-item::before {
+    content: "";
+    position: absolute;
+    left: var(--space-4);
+    top: 50%;
+    width: 3px;
+    height: 12px;
+    border-radius: 999px;
+    background: transparent;
+    transform: translateY(-50%);
+}
+
+.asset-item:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.asset-item.active {
+    color: var(--text-primary);
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.16) 0%, rgba(124, 58, 237, 0.04) 55%, transparent 100%);
+}
+
+.asset-item.active::before {
+    background: var(--accent);
+}
+
+.asset-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.asset-item.active .asset-icon {
+    opacity: 1;
+    color: var(--accent);
+}
+
+.asset-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.asset-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.asset-type {
+    display: none;
+    /* Keep it minimalist */
+}
+
+.browser-footer {
+    padding: var(--space-6) var(--space-6) 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    margin-top: var(--space-4);
+}
+
+.footer-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label-wide);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.footer-path {
+    font-size: var(--text-2xs);
+    color: rgba(226, 226, 231, 0.4);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+    text-align: left;
+    display: block;
+}
+
+/* Editor Pane */
+.memory-editor-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--bg-base);
+}
+
+.editor-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.editor-header {
+    padding: var(--layout-page-header-y) var(--layout-page-header-x);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+}
+
+.editor-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.editor-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.editor-title-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.editor-title {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: var(--tracking-title);
+    color: var(--text-primary);
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.editor-subtitle {
+    font-size: var(--text-2xs);
+    font-family: var(--font-mono);
+    color: rgba(226, 226, 231, 0.45);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label-wide);
+    margin: 0;
+}
+
+.code-editor {
+    flex: 1;
+    background: rgba(10, 10, 12, 0.4) !important;
+    border: none !important;
+    color: var(--text-primary) !important;
+    font-family: var(--font-mono) !important;
+    font-size: 13px !important;
+    padding: var(--space-8) !important;
+    resize: none !important;
+    outline: none !important;
+    line-height: 1.8 !important;
+    overflow-y: auto;
+    letter-spacing: 0.02em;
+}
+
+.code-editor::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.2;
+}
+
+/* Status Dot for Unsaved */
+.asset-item.unsaved::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: var(--warning, #f59e0b);
+    border-radius: 50%;
+    margin-left: auto;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+/* Scrollbar refinement */
+.code-editor::-webkit-scrollbar {
+    width: 12px;
+}
+
+.code-editor::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.code-editor::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border: 4px solid var(--bg-base);
+    border-radius: 10px;
+}
+
+.code-editor::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.1);
+}

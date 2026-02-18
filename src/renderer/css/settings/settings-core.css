@@ -1,0 +1,435 @@
+/**
+ * DRAM Desktop - Settings Core Control Styles
+ * Base styles for forms and controls
+ */
+
+/* ===== Unified Component Library ===== */
+.settings-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    gap: var(--space-4);
+}
+
+.settings-control.vertical {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.settings-control:last-child {
+    border-bottom: none;
+}
+
+.control-label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    flex: 1;
+}
+
+.label-text {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.label-description {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    line-height: var(--line-height-normal);
+}
+
+.input-wrapper,
+.input-group,
+.select-wrapper,
+.range-wrapper {
+    flex-shrink: 0;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-group input {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-control.vertical .input-wrapper,
+.settings-control.vertical .input-group,
+.settings-control.vertical .select-wrapper,
+.settings-control.vertical .range-wrapper {
+    width: 100%;
+}
+
+.select-wrapper select {
+    background: var(--bg-base);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    padding: 0 12px;
+    height: 32px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    min-width: 160px;
+}
+
+.range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.range-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 24px;
+}
+
+.info-box {
+    display: flex;
+    gap: 16px;
+    /* Increased gap */
+    padding: 16px 24px;
+    /* Increased breathing room */
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 24px;
+}
+
+.info-box.warning {
+    border-color: var(--warning);
+    background: rgba(var(--warning-rgb), 0.05);
+}
+
+.info-box.error {
+    border-color: var(--error);
+    background: rgba(var(--error-rgb), 0.05);
+}
+
+.info-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.info-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Note: .section-header base styles are in dashboard.css */
+/* Only info-icon specific overrides are here */
+
+/* Info icon - outlined purple circle with "i" */
+.info-icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    border-radius: 50%;
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+    flex-shrink: 0;
+    line-height: 1;
+    vertical-align: middle;
+    margin-top: 2px;
+}
+
+/* JS-managed tooltips are appended to body to avoid overflow clipping */
+.info-tooltip-popup {
+    animation: tooltipFadeIn 0.15s ease;
+}
+
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Premium Card (Dieter Rams Minimalist) */
+.premium-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.premium-card:hover {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: var(--bg-hover);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.premium-card.active {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 0 1px var(--accent-glow);
+}
+
+.premium-card:focus-within {
+    border-color: var(--accent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 0 1px var(--accent-glow);
+}
+
+/* ===== Secure API Key Fields ===== */
+.key-field-container.setting-control {
+    /* Increase specificity to override defaults */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 36px;
+    margin-top: 4px;
+}
+
+.key-input-wrapper {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    height: 100%;
+}
+
+.key-status-dots {
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+    padding: 0 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1.2rem;
+    line-height: 1;
+    user-select: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-sizing: border-box;
+}
+
+.secure-key-input {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0 12px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    line-height: normal;
+}
+
+.secure-key-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.key-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 0;
+}
+
+.key-actions button {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0 16px;
+    box-sizing: border-box;
+    line-height: 1;
+    white-space: nowrap;
+    border-radius: var(--radius);
+}
+
+/* ===== Setting Status Indicators ===== */
+.setting-status-indicator {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    min-height: 18px;
+}
+
+.setting-status-indicator.success {
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.setting-status-indicator.info {
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+}
+
+.setting-status-indicator.warning {
+    color: var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.setting-status-indicator.error {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ===== Thinking Preview ===== */
+.think-preview {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+.think-preview-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+}
+
+.think-preview-content {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* ===== Provider-specific Options ===== */
+.provider-specific-options {
+    transition: opacity 0.2s ease, max-height 0.2s ease;
+    overflow: hidden;
+}
+
+.provider-specific-options.hidden {
+    display: none;
+    opacity: 0;
+    max-height: 0;
+}
+
+.provider-specific-options:not(.hidden) {
+    opacity: 1;
+    max-height: 200px;
+    margin-top: 12px;
+}
+
+/* ===== Select with Optgroup Styling ===== */
+select optgroup {
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    padding: 4px 8px;
+}
+
+select option {
+    padding: 4px 12px;
+    font-weight: 400;
+}
+
+/* ===== Empty State (Minimalist) ===== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8) var(--space-6);
+    text-align: center;
+}
+
+.empty-state-icon {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    margin-bottom: var(--space-4);
+    color: var(--text-tertiary);
+    opacity: 0.4;
+}
+
+.empty-state-title {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-description {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    max-width: 280px;
+    line-height: var(--line-height-relaxed);
+}
+
+/* ===== Loading State ===== */
+.loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    color: var(--text-muted);
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: var(--space-2);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== Voice Tab Enhancements ===== */
+#tab-voice .info-box {
+    margin-bottom: 16px;
+}
+
+#tab-voice .settings-section {
+    margin-bottom: 24px;
+}
+
+#tab-voice .settings-control {
+    padding: var(--space-4) 0;
+}

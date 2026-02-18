@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 701.07 283.03">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+        font-family: Consolas, Consolas;
+        font-size: 252.4px;
+        letter-spacing: .2em;
+      }
+
+      .cls-1, .cls-2 {
+        isolation: isolate;
+      }
+
+      .cls-3 {
+        fill: #7c3aed;
+      }
+
+      .cls-4 {
+        fill: none;
+        stroke: #fff;
+        stroke-width: 22px;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <path class="cls-4" d="M11,56.54h54.1c38.4,0,69.6,31.1,69.6,69.6s-31.1,69.6-69.6,69.6H11V56.54Z"/>
+      <circle class="cls-3" cx="68.9" cy="126.04" r="19.3"/>
+    </g>
+    <g class="cls-2">
+      <text class="cls-1" transform="translate(183.8 206.74)"><tspan x="0" y="0">RAM</tspan></text>
+    </g>
+  </g>
+</svg>

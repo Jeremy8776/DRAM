@@ -1,0 +1,258 @@
+/* ═══════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════ */
+.hidden {
+    display: none !important;
+}
+
+.hero-capabilities.hidden {
+    display: none;
+}
+
+.hero-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    max-width: 500px;
+}
+
+.capability-tag {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.capability-tag.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.capability-tag .dot {
+    width: 4px;
+    height: 4px;
+    background: currentColor;
+    border-radius: 50%;
+}
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY UTILITIES
+   Use these for consistent text sizing
+   ═══════════════════════════════════════════ */
+
+/* Size utilities */
+.text-2xl {
+    font-size: var(--text-2xl);
+}
+
+.text-xl {
+    font-size: var(--text-xl);
+}
+
+.text-lg {
+    font-size: var(--text-lg);
+}
+
+.text-md {
+    font-size: var(--text-md);
+}
+
+.text-base {
+    font-size: var(--text-base);
+}
+
+.text-sm {
+    font-size: var(--text-sm);
+}
+
+.text-xs {
+    font-size: var(--text-xs);
+}
+
+/* Semantic utilities */
+.text-heading {
+    font-size: var(--font-size-heading);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+}
+
+.text-subheading {
+    font-size: var(--font-size-subheading);
+    font-weight: var(--font-weight-medium);
+}
+
+.text-body {
+    font-size: var(--font-size-body);
+}
+
+.text-caption {
+    font-size: var(--font-size-caption);
+    color: var(--text-secondary);
+}
+
+.text-label {
+    font-size: var(--font-size-label);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: var(--font-weight-medium);
+}
+
+.text-mono {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-mono);
+}
+
+.text-code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-code);
+    background: var(--bg-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Weight utilities */
+.font-normal {
+    font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+    font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+    font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+/* ═══════════════════════════════════════════
+   COLOR UTILITIES - Semantic Colors
+   ═══════════════════════════════════════════ */
+
+/* Text colors */
+.text-success {
+    color: var(--color-success);
+}
+
+.text-warning {
+    color: var(--color-warning);
+}
+
+.text-error {
+    color: var(--color-error);
+}
+
+.text-info {
+    color: var(--color-info);
+}
+
+/* Background colors */
+.bg-success {
+    background-color: var(--color-success-subtle);
+}
+
+.bg-warning {
+    background-color: var(--color-warning-subtle);
+}
+
+.bg-error {
+    background-color: var(--color-error-subtle);
+}
+
+.bg-info {
+    background-color: var(--color-info-subtle);
+}
+
+/* Border colors */
+.border-success {
+    border-color: var(--color-success);
+}
+
+.border-warning {
+    border-color: var(--color-warning);
+}
+
+.border-error {
+    border-color: var(--color-error);
+}
+
+.border-info {
+    border-color: var(--color-info);
+}
+
+/* ═══════════════════════════════════════════
+   FOCUS STATES - Accessibility
+   Provides visible focus indicators for 
+   keyboard navigation (WCAG 2.1 compliance)
+   ═══════════════════════════════════════════ */
+
+/* Default focus-visible ring for all interactive elements */
+:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* For elements that need custom focus styles */
+.focus-ring:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Remove default outline but add custom ring */
+.focus-ring-inset:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--focus-ring-color);
+}
+
+/* For inputs that already have border focus states */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Buttons with focus ring */
+button:focus-visible,
+.btn:focus-visible,
+.tactile-btn:focus-visible,
+.icon-btn:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Skip to content link (screen reader friendly) */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    background: var(--accent);
+    color: var(--bg-base);
+    padding: var(--space-2) var(--space-4);
+    z-index: 9999;
+    text-decoration: none;
+    font-weight: var(--font-weight-semibold);
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Selection */
+::selection {
+    background: var(--accent-subtle);
+    color: var(--text-primary);
+}

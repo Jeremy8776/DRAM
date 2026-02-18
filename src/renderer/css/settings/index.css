@@ -1,0 +1,12 @@
+/**
+ * DRAM Desktop - Settings Styles Index
+ */
+
+@import './settings-core.css';
+@import './settings-plugins.css';
+@import './settings-devices.css';
+@import './settings-cron.css';
+@import './settings-logs.css';
+@import './settings-memory.css';
+@import './settings-health.css';
+@import './settings-models.css';

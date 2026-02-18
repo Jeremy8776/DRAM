@@ -1,0 +1,123 @@
+/**
+ * DRAM Desktop - Settings Memory Styles
+ */
+
+/* ===== Memory Tab ===== */
+.memory-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.stat-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary);
+    font-family: var(--font-mono);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--space-1);
+}
+
+.memory-search {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.memory-search input {
+    flex: 1;
+}
+
+.memory-results {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.memory-result-item {
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-2);
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.memory-result-item:hover {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: var(--bg-elevated);
+}
+
+.memory-result-content {
+    font-size: 0.85rem;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: var(--space-2);
+}
+
+.memory-result-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.memory-score {
+    color: var(--primary);
+    font-family: var(--font-mono);
+}
+
+.memory-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}
+
+.status-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+}
+
+.status-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.status-value.accent {
+    color: var(--accent);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+    .memory-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

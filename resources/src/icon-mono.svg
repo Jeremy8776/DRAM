@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!-- DRAM Monochrome - D Monogram -->
+  <rect x="0" y="0" width="256" height="256" rx="56" fill="currentColor" fill-opacity="0.05"/>
+  <path d="M72 56 L128 56 A72 72 0 0 1 128 200 L72 200 Z" 
+        stroke="currentColor" stroke-width="16" stroke-linejoin="round" fill="none"/>
+  <circle cx="132" cy="128" r="20" fill="currentColor"/>
+</svg>

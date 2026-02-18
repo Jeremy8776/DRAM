@@ -1,0 +1,128 @@
+/* Reset */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Global Scrollbar Styling */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+*::-webkit-scrollbar-thumb:active {
+    background: var(--accent);
+}
+
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Base */
+body.rams-dark {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--line-height-normal);
+    font-weight: var(--font-weight-normal);
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+}
+
+/* Global Switch Component (Dieter Rams Style) - Standardized */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 1px;
+}
+
+.switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 1px;
+    background-color: var(--text-tertiary);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 2px;
+}
+
+.switch input:checked+.slider {
+    background-color: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+.switch input:checked+.slider:before {
+    transform: translateX(20px);
+    background-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.switch.sm {
+    width: 28px;
+    height: 12px;
+}
+
+.switch.sm .slider:before {
+    height: 8px;
+    width: 11px;
+    left: 1px;
+    bottom: 1px;
+}
+
+.switch.sm input:checked+.slider:before {
+    transform: translateX(13px);
+}

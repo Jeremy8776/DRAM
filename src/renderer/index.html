@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' dram:; script-src 'self' 'unsafe-inline' dram: blob:; style-src 'self' 'unsafe-inline' dram:; img-src 'self' data: blob: dram: https:; connect-src 'self' dram: ws://127.0.0.1:18789 ws://localhost:18789 http://127.0.0.1:18789 http://localhost:18789 https://*.google.com https://www.google.com; frame-src 'self' dram: blob: data: http://127.0.0.1:18789 http://localhost:18789; media-src 'self' data: blob: dram:; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>DRAM Desktop</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="rams-dark">
+    <div id="app" class="app-hidden">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-drag-region"></div>
+            <div class="loading-content">
+                <div class="hero-text">
+                    <h1 class="logo"><img src="dram://app/logo.svg" alt="DRAM" height="120"
+                            style="display:block;margin:0 auto;"></h1>
+                    <p>DIGITAL RESOURCE ALLOCATION MODULE</p>
+                </div>
+            </div>
+            <div class="loading-footer">
+                <div class="loading-status" id="loading-status">Initializing...</div>
+                <div class="loading-bar-container">
+                    <div class="loading-bar" id="loading-progress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar (Injected by JS) -->
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <!-- Main Viewport -->
+        <main class="viewport">
+            <!-- Chat View -->
+            <div id="chat-view" class="view active">
+                <header class="top-bar">
+                    <div class="top-bar-content">
+                        <div id="chat-tabs-bar" class="chat-tabs-bar">
+                            <div id="chat-tabs-list" class="chat-tabs-list"></div>
+                            <button id="btn-add-tab" class="add-tab-btn" title="New Chat">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="3">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="chat-canvas-container">
+                    <div class="chat-main">
+                        <div class="scroll-canvas" id="message-container">
+                            <div class="hero-text" id="hero-welcome">
+                                <h1 class="logo"><img src="dram://app/logo.svg" alt="DRAM" height="120"
+                                        style="display:block;margin:0 auto;"></h1>
+                                <p>DIGITAL RESOURCE ALLOCATION MODULE</p>
+                                <div class="hero-console" id="hero-console">
+                                    <span id="hero-status">Not Connected</span>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="input-zone">
+                            <div id="preview-area" class="preview-strip"></div>
+                            <div id="canvas-context-chip" class="canvas-context-chip hidden"></div>
+                            <div class="command-container">
+                                <textarea id="message-input" placeholder="Ask DRAM Engine..."></textarea>
+                                <div id="voice-inline-ui" class="voice-inline-ui hidden">
+                                    <canvas id="voice-waveform-inline"></canvas>
+                                    <div id="voice-transcript-inline" class="voice-transcript-inline"></div>
+                                    <div class="voice-inline-status">
+                                        <span class="status-dot pulse"></span>
+                                        <span id="voice-status-text">Listening...</span>
+                                    </div>
+                                </div>
+
+                                <div class="input-footer">
+                                    <div class="footer-left">
+                                        <button id="btn-attach" class="icon-btn" title="Attach">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <path
+                                                    d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48">
+                                                </path>
+                                            </svg>
+                                        </button>
+                                        <span id="attach-capability-badge" class="attach-capability-badge" title="Model image capability">Vision</span>
+                                        <div class="model-info-container" id="model-info-trigger">
+                                            <span class="model-info" id="display-model-name">Claude 3.5 <span
+                                                    class="rate-info" id="display-rate-limit">100%</span></span>
+                                            <div id="rate-panel" class="rate-limit-panel hidden">
+                                                <div class="panel-header">System Load // Limits</div>
+                                                <div id="rate-panel-content" class="panel-rows"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="footer-right">
+                                        <button id="btn-voice-continuous" class="icon-btn" title="Continuous Mode"
+                                            style="color: var(--text-dim);">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                                                <polyline points="21 3 21 8 16 8"></polyline>
+                                            </svg>
+                                        </button>
+                                        <button id="btn-voice-toggle" class="icon-btn" title="Voice Mode">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                                            </svg>
+                                        </button>
+                                        <button id="btn-canvas-toggle" class="icon-btn" title="Toggle Canvas">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                                            </svg>
+                                        </button>
+                                        <button id="btn-voice-cancel" class="icon-btn hidden" title="Cancel Voice"
+                                            style="color: #ef4444;">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                        <button id="btn-send" class="icon-btn" title="Send">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="canvas-panel" class="canvas-panel collapsed">
+                        <div class="canvas-panel-header">
+                            <div class="canvas-panel-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <path d="M21 15l-5-5L5 21"></path>
+                                </svg>
+                                <span>Canvas</span>
+                                <span id="canvas-runtime-badge" class="canvas-runtime-badge">Idle</span>
+                                <div id="canvas-view-toggle" class="canvas-view-toggle hidden" aria-label="Canvas view mode">
+                                    <button id="btn-canvas-view-render" class="canvas-view-btn" type="button">Render</button>
+                                    <button id="btn-canvas-view-code" class="canvas-view-btn" type="button">Code</button>
+                                </div>
+                            </div>
+                            <div class="canvas-panel-controls">
+                                <button id="btn-canvas-reload" class="canvas-header-btn" title="Reload Canvas">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <polyline points="1 20 1 14 7 14"></polyline>
+                                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                                    </svg>
+                                </button>
+                                <button id="btn-canvas-snapshot" class="canvas-header-btn" title="Capture Snapshot">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                        <circle cx="12" cy="13" r="4"></circle>
+                                    </svg>
+                                </button>
+                                <button id="btn-canvas-reset" class="canvas-header-btn" title="Reset Canvas">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="1 4 1 10 7 10"></polyline>
+                                        <path d="M3.51 15a9 9 0 1 0 .49-9"></path>
+                                    </svg>
+                                </button>
+                                <button id="btn-canvas-popout" class="canvas-header-btn" title="Open in Browser">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                </button>
+                                <button id="btn-canvas-close" class="canvas-header-btn" title="Close Canvas">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="canvas-panel-content">
+                            <aside class="canvas-sidebar" id="canvas-sidebar">
+                                <div class="canvas-sidebar-section">
+                                    <div class="canvas-sidebar-title">Workspace</div>
+                                    <div class="canvas-workspace-row">
+                                        <span id="canvas-workspace-path" class="canvas-workspace-path">No folder selected</span>
+                                        <button id="btn-canvas-select-folder" class="canvas-side-btn">Folder</button>
+                                    </div>
+                                    <div class="canvas-workspace-actions">
+                                        <button id="btn-canvas-new-file" class="canvas-side-btn">New File</button>
+                                        <button id="btn-canvas-save-file" class="canvas-side-btn primary">Save Current</button>
+                                    </div>
+                                </div>
+                                <div class="canvas-sidebar-section">
+                                    <div class="canvas-sidebar-title">Files</div>
+                                    <div id="canvas-file-list" class="canvas-nav-list"></div>
+                                </div>
+                                <div class="canvas-sidebar-section">
+                                    <div class="canvas-sidebar-title">Iterations</div>
+                                    <div id="canvas-version-list" class="canvas-nav-list"></div>
+                                </div>
+                                <div class="canvas-sidebar-section">
+                                    <div class="canvas-sidebar-title">Uploads (Session)</div>
+                                    <div id="canvas-upload-list" class="canvas-nav-list"></div>
+                                </div>
+                            </aside>
+                            <div class="canvas-frame-wrap">
+                                <iframe id="canvas-frame"
+                                    sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin allow-downloads"
+                                    src="about:blank"></iframe>
+                                <div id="canvas-empty-state" class="canvas-empty-state">
+                                    <div class="canvas-empty-icon">CV</div>
+                                    <div class="canvas-empty-title">Canvas Ready</div>
+                                    <div class="canvas-empty-desc">The AI will display code, documents, and interactive
+                                        content here.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="canvas-panel-resize-handle" id="canvas-resize-handle"></div>
+                    </div>
+                </div>
+
+                <div id="voice-mode-overlay" class="voice-overlay hidden">
+                    <div class="voice-content">
+                        <div class="voice-status" id="voice-status">Listening...</div>
+                        <div class="waveform-container"><canvas id="voice-waveform"></canvas></div>
+                        <div class="voice-transcript" id="voice-transcript"></div>
+                        <button id="btn-voice-close" class="voice-close-btn" title="Exit Voice Mode">
+                            <span class="voice-close-label">Exit</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory View (Neural Assets) -->
+            <div id="memory-view" class="view memory-viewport">
+                <div class="memory-dam-container">
+                    <div class="memory-browser">
+                        <div class="browser-header"><span class="browser-title">NEURAL ASSETS</span></div>
+                        <div id="memory-asset-list" class="asset-list"></div>
+                        <div class="browser-footer">
+                            <span class="footer-label">WORKSPACE</span>
+                            <span class="footer-path" id="display-workspace-path">...</span>
+                        </div>
+                    </div>
+                    <div class="memory-editor-pane">
+                        <div class="editor-card">
+                            <div class="editor-header">
+                                <div class="editor-title-wrapper">
+                                    <div class="editor-icon" id="editor-file-icon">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="editor-title-text">
+                                        <span class="editor-title" id="editor-file-name">Select an asset</span>
+                                        <span class="editor-subtitle" id="editor-file-desc">View and edit neural
+                                            identity files</span>
+                                    </div>
+                                </div>
+                                <div class="editor-actions">
+                                    <button id="btn-reload-memory" class="tactile-btn sm">Reload</button>
+                                    <button id="btn-save-memory" class="tactile-btn primary sm">Save Asset</button>
+                                </div>
+                            </div>
+                            <textarea id="editor-memory" class="code-editor" spellcheck="false"
+                                placeholder="Select a file to edit..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="view settings-view"></div>
+
+            <!-- Usage View (Placeholder, auto-injected by JS if missing) -->
+            <!-- <div id="usage-view" class="usage-view"></div> -->
+        </main>
+
+        <!-- Panels -->
+        <div id="connection-panel" class="hidden"></div>
+    </div>
+
+    <!-- Setup Wizard - Separate full screen, not an overlay -->
+    <div id="setup-screen" class="hidden"></div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

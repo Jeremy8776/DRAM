@@ -1,0 +1,130 @@
+/* ═══════════════════════════════════════════
+   VIEWPORT - Main content area
+   ═══════════════════════════════════════════ */
+.viewport {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-base);
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* View containers - fill viewport */
+.view {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.view.active {
+    display: flex;
+}
+
+/* Top bar - Minimal status */
+.top-bar {
+    padding-top: var(--layout-pane-nav-y);
+    height: auto;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    -webkit-app-region: drag;
+    user-select: none;
+}
+
+.top-bar * {
+    -webkit-app-region: no-drag;
+}
+
+/* Top bar content row (for tabs + canvas button) */
+.top-bar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-4);
+    height: 48px;
+    min-height: 48px;
+}
+
+/* Chat tabs take remaining space */
+.top-bar-content .chat-tabs-bar {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Windows controls reservation - ensures content starts below the 48px overlay */
+.platform-win32 .top-bar {
+    padding-top: 48px;
+}
+
+/* Windows controls overlay the content - no extra padding needed */
+.platform-win32 .chat-canvas-container:has(.canvas-panel:not(.collapsed)) .top-bar {
+    padding-right: 0;
+}
+
+.status-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    transition: all 0.3s ease;
+}
+
+.indicator.connecting {
+    background: var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.indicator.connected {
+    background: var(--color-success);
+    box-shadow: 0 0 8px var(--color-success-glow);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.system-label {
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+}
+
+.model-badge {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+    color: var(--text-tertiary);
+    letter-spacing: var(--tracking-meta);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Hide input zone when Chat is NOT the focus (i.e. when Memory or Usage are active) */
+.viewport:has(#memory-view.active) .input-zone,
+.viewport:has(#usage-view.active) .input-zone,
+.viewport:has(#settings-view.active) .input-zone {
+    display: none !important;
+}

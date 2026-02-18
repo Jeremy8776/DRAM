@@ -1,0 +1,461 @@
+/* ═══════════════════════════════════════════
+   DASHBOARD - System Dashboards
+   ═══════════════════════════════════════════ */
+
+/* Global Range Slider Styling */
+input[type=range] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: var(--bg-elevated);
+    border-radius: 2px;
+    border: 1px solid var(--border);
+}
+
+input[type=range]::-webkit-slider-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -7px;
+    /* Centers thumb on track */
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--bg-surface);
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+    background: var(--bg-hover);
+}
+
+.settings-shell {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    box-shadow: none;
+    z-index: 2;
+    overflow: hidden;
+    animation: none;
+}
+
+@keyframes dashboardSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Internal Sidebar for Dashboards */
+.dashboard-sidebar {
+    width: var(--layout-pane-width);
+    background: var(--bg-base);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: var(--layout-pane-nav-y) 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+/* Advanced Mode logic */
+.advanced-mode-disabled .advanced-only {
+    display: none !important;
+}
+
+/* Engine Offline Logic */
+.engine-offline .plugin-toggle,
+.engine-offline .plugin-config-btn,
+.engine-offline #btn-install-skill,
+.engine-offline .skill-toggle,
+.engine-offline .skill-update-btn {
+    pointer-events: none !important;
+    opacity: 0.4;
+    filter: grayscale(1);
+}
+
+.engine-offline .offline-hint {
+    color: var(--warning) !important;
+    font-size: var(--text-xs);
+    font-weight: bold;
+    margin-left: 4px;
+}
+
+.sidebar-label {
+    padding: var(--layout-pane-nav-y) var(--layout-pane-nav-x) var(--space-2);
+    font-size: var(--text-2xs);
+    font-weight: 600;
+    color: rgba(226, 226, 231, 0.45);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label-wide);
+}
+
+.dashboard-nav-item {
+    position: relative;
+    padding: var(--space-3) var(--layout-pane-nav-x) var(--space-3) calc(var(--layout-pane-nav-x) + 10px);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-nav);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+    border-left: none;
+}
+
+.dashboard-nav-item::before {
+    content: "";
+    position: absolute;
+    left: var(--space-4);
+    top: 50%;
+    width: 3px;
+    height: 12px;
+    border-radius: 999px;
+    background: transparent;
+    transform: translateY(-50%);
+}
+
+.dashboard-nav-item:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-nav-item.active {
+    color: var(--text-primary);
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.16) 0%, rgba(124, 58, 237, 0.04) 55%, transparent 100%);
+}
+
+.dashboard-nav-item.active::before {
+    background: var(--accent);
+}
+
+/* Main Panel Content */
+.dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-base);
+    overflow: hidden;
+}
+
+.settings-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.settings-header {
+    padding: var(--layout-page-header-y) var(--layout-page-header-x);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+}
+
+.settings-header h1 {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: var(--tracking-title);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-1);
+    text-transform: uppercase;
+}
+
+.settings-header p {
+    font-size: var(--text-2xs);
+    font-family: var(--font-mono);
+    color: rgba(226, 226, 231, 0.45);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-kicker);
+    margin: 0;
+}
+
+.settings-content {
+    overflow: visible;
+    padding: var(--space-8) var(--layout-page-content-x);
+}
+
+.settings-section {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-7);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-section h2 {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-section);
+    color: rgba(226, 226, 231, 0.6);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    flex: 1;
+}
+
+/* Section header wrapper for title + info icon */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+}
+
+.section-header h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.4;
+}
+
+.settings-section .section-subtitle {
+    margin: 0 0 var(--space-5);
+    max-width: 640px;
+    font-size: var(--text-xs);
+    color: rgba(226, 226, 231, 0.55);
+    line-height: 1.6;
+    letter-spacing: var(--tracking-meta);
+}
+
+.settings-section .section-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    margin-top: var(--space-4);
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.2s ease;
+}
+
+.setting-item:hover {
+    background: rgba(124, 58, 237, 0.04);
+}
+
+.setting-item.vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-dense);
+}
+
+.mono-input {
+    width: 100%;
+    background: rgba(10, 10, 12, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: 0 var(--space-3);
+    letter-spacing: var(--tracking-meta);
+    height: 32px;
+    line-height: normal;
+    display: flex;
+    align-items: center;
+}
+
+.mono-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.35);
+    outline: none;
+}
+
+.setting-control.wide {
+    width: 100%;
+}
+
+.switch.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.setting-description {
+    font-size: var(--text-xs);
+    color: rgba(226, 226, 231, 0.5);
+}
+
+.btn-danger {
+    color: var(--color-error);
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+.btn-danger:hover {
+    background: var(--color-error-subtle) !important;
+    border-color: var(--color-error) !important;
+}
+
+.dashboard-sidebar-footer {
+    margin-top: auto;
+    padding: var(--layout-pane-nav-y) var(--layout-pane-nav-x) 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-footer-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label-wide);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.sidebar-footer-value {
+    font-size: var(--text-2xs);
+    color: rgba(226, 226, 231, 0.4);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-meta);
+    line-height: 1.4;
+    display: block;
+    word-break: break-word;
+}
+
+.input-group {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.input-group .mono-input {
+    flex: 1;
+}
+
+.input-group .tactile-btn {
+    height: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    line-height: 1;
+    padding: 0 12px;
+    /* Ensure sufficient horizontal padding */
+}
+
+/* Health Matrix */
+.health-log {
+    background: #020202;
+    border: 1px solid var(--border);
+    padding: var(--space-2);
+    border-radius: 4px;
+}
+
+.health-row {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid #111;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+}
+
+.health-indicator {
+    width: 12px;
+    font-size: 14px;
+    margin-right: var(--space-4);
+}
+
+.health-indicator.good {
+    color: var(--color-success);
+}
+
+.health-indicator.warn {
+    color: var(--color-warning);
+}
+
+.health-module {
+    flex: 1;
+    color: var(--text-secondary);
+}
+
+.health-msg {
+    color: var(--text-tertiary);
+    text-align: right;
+    width: 140px;
+}
+
+/* Settings Page View Overrides */
+.settings-view {
+    background: var(--bg-base);
+    overflow: hidden;
+    position: relative;
+}
+
+.platform-win32 .settings-view {
+    padding-top: 48px;
+    -webkit-app-region: drag;
+}
+
+.platform-win32 .settings-view::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--layout-pane-width);
+    width: 1px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+}
+
+.platform-win32 .settings-view>* {
+    -webkit-app-region: no-drag;
+}
+
+.settings-view .settings-shell {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    animation: none;
+}
