@@ -1,17 +1,17 @@
 /**
  * DRAM Socket Management (DRAM Engine Protocol)
  */
-import { state } from '../../../src/renderer/modules/state.js';
-import { elements } from '../../../src/renderer/modules/elements.js';
-import { addMessage, clearMessages, renderAttachmentPreview, updateInfobar, showTypingIndicator, hideTypingIndicator, updateTypingStatus } from '../../../src/renderer/modules/renderer.js';
-import { addSystemMessage, translateGatewayError } from '../../../src/renderer/modules/utils.js';
-import { humanizeError } from '../../../src/renderer/modules/errors.js';
-import { updateConnectionUI } from '../../../src/renderer/modules/connection-ui.js';
-import { getActiveModelInfo } from '../../../src/renderer/modules/rate-limits.js';
-import { getActiveModelUploadPolicy, imageUploadBlockedMessage } from '../../../src/renderer/modules/model-capabilities.js';
+import { state } from '../../../modules/state.js';
+import { elements } from '../../../modules/elements.js';
+import { addMessage, clearMessages, renderAttachmentPreview, updateInfobar, showTypingIndicator, hideTypingIndicator, updateTypingStatus } from '../../../modules/renderer.js';
+import { addSystemMessage, translateGatewayError } from '../../../modules/utils.js';
+import { humanizeError } from '../../../modules/errors.js';
+import { updateConnectionUI } from '../../../modules/connection-ui.js';
+import { getActiveModelInfo } from '../../../modules/rate-limits.js';
+import { getActiveModelUploadPolicy, imageUploadBlockedMessage } from '../../../modules/model-capabilities.js';
 
-import { handleChatEvent, handleAgentEvent, trackRun } from '../../../src/renderer/modules/chat-handler.js';
-import { logger } from '../../../src/renderer/modules/logger.js';
+import { handleChatEvent, handleAgentEvent, trackRun } from '../../../modules/chat-handler.js';
+import { logger } from '../../../modules/logger.js';
 
 const log = logger('Socket');
 
@@ -156,7 +156,7 @@ function buildOutboundMessage(text) {
 
 async function getCanvasPromptContextSnippet(userText) {
     try {
-        const canvasModule = await import('../../../src/renderer/modules/canvas.js');
+        const canvasModule = await import('../../../modules/canvas.js');
         if (typeof canvasModule.buildCanvasPromptContext !== 'function') return '';
         return canvasModule.buildCanvasPromptContext(userText);
     } catch (err) {
@@ -167,7 +167,7 @@ async function getCanvasPromptContextSnippet(userText) {
 
 async function getCanvasPromptContextMeta(userText) {
     try {
-        const canvasModule = await import('../../../src/renderer/modules/canvas.js');
+        const canvasModule = await import('../../../modules/canvas.js');
         if (typeof canvasModule.getActiveCanvasContextMeta !== 'function') return null;
         return canvasModule.getActiveCanvasContextMeta(userText);
     } catch (err) {
@@ -179,7 +179,7 @@ async function getCanvasPromptContextMeta(userText) {
 async function recordCanvasUploadHistory(attachments = []) {
     if (!Array.isArray(attachments) || attachments.length === 0) return;
     try {
-        const canvasModule = await import('../../../src/renderer/modules/canvas.js');
+        const canvasModule = await import('../../../modules/canvas.js');
         if (typeof canvasModule.recordUploadHistory === 'function') {
             canvasModule.recordUploadHistory(attachments);
         }
@@ -190,7 +190,7 @@ async function recordCanvasUploadHistory(attachments = []) {
 
 async function clearCanvasUploadHistoryForSession(sessionKey) {
     try {
-        const canvasModule = await import('../../../src/renderer/modules/canvas.js');
+        const canvasModule = await import('../../../modules/canvas.js');
         if (typeof canvasModule.clearUploadHistoryForSession === 'function') {
             canvasModule.clearUploadHistoryForSession(sessionKey);
         }
@@ -437,7 +437,7 @@ export function handleMessage(data) {
 function handleResponse(msg) {
     // Forward to usage data handler for RPC responses
     if (msg.id && (msg.id.startsWith('usage-status') || msg.id.startsWith('usage-cost'))) {
-        import('../../../src/renderer/modules/usage-data.js').then(m => m.handleUsageRpcResponse(msg));
+        import('../../../modules/usage-data.js').then(m => m.handleUsageRpcResponse(msg));
         return;
     }
 

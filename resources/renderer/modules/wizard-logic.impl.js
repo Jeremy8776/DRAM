@@ -1,9 +1,9 @@
-import { state } from '../../../src/renderer/modules/state.js';
-import { elements } from '../../../src/renderer/modules/elements.js';
-import { renderWizard, renderLoadingStep } from '../../../src/renderer/components/wizard.js';
-import { addSystemMessage } from '../../../src/renderer/modules/utils.js';
-import { wizardState, getProviderFromModel, validateApiKey, finishWizardCore, finishWizardIntegrations, initializeWizardState, collectPluginConfigsFromDOM } from '../../../src/renderer/modules/wizard.js';
-import { showToast } from '../../../src/renderer/components/dialog.js';
+import { state } from '../../../modules/state.js';
+import { elements } from '../../../modules/elements.js';
+import { renderWizard, renderLoadingStep } from '../../../components/wizard.js';
+import { addSystemMessage } from '../../../modules/utils.js';
+import { wizardState, getProviderFromModel, validateApiKey, finishWizardCore, finishWizardIntegrations, initializeWizardState, collectPluginConfigsFromDOM } from '../../../modules/wizard.js';
+import { showToast } from '../../../components/dialog.js';
 
 const normalizeSecretInput = (rawValue) => {
     const value = typeof rawValue === 'string' ? rawValue.trim() : '';
@@ -190,7 +190,7 @@ export function setupWizardLogic() {
         }
 
         // Start connection attempt - import robustly
-        import('../../../src/renderer/modules/socket.js').then(({ connect }) => {
+        import('../../../modules/socket.js').then(({ connect }) => {
             connect().catch(() => { console.log('Wizard: socket connect init failed'); });
         });
 
@@ -241,7 +241,7 @@ export function setupWizardLogic() {
                 if (waitTime > maxWaitTime) {
                     msg.textContent = 'LINK TIMEOUT - RETRYING...';
                     setSyncState('connecting', 'Retrying');
-                    import('../../../src/renderer/modules/socket.js').then(({ connect }) => connect().catch(() => { }));
+                    import('../../../modules/socket.js').then(({ connect }) => connect().catch(() => { }));
                     waitTime = 0;
                 } else {
                     msg.textContent = 'CONNECTING...';
@@ -509,7 +509,7 @@ export function setupWizardLogic() {
                     btn.textContent = 'Connecting...';
                     btn.disabled = true;
 
-                    const { connect } = await import('../../../src/renderer/modules/socket.js');
+                    const { connect } = await import('../../../modules/socket.js');
                     connect().catch(() => { });
 
                     let attempts = 0;

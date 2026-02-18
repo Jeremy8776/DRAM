@@ -3,10 +3,10 @@
  * Handles fetching and updating API usage statistics
  */
 
-import { state } from '../../../src/renderer/modules/state.js';
-import { updateUsageStats } from '../../../src/renderer/components/settings/tabs/usage.js';
-import { updateModelStats } from '../../../src/renderer/modules/rate-limits.js';
-import { logger } from '../../../src/renderer/modules/logger.js';
+import { state } from '../../../modules/state.js';
+import { updateUsageStats } from '../../../components/settings/tabs/usage.js';
+import { updateModelStats } from '../../../modules/rate-limits.js';
+import { logger } from '../../../modules/logger.js';
 
 // Create context-specific logger (debug logs hidden in production)
 const log = logger('Usage');
@@ -652,7 +652,7 @@ export async function loadUsageData(days = currentTimeRange) {
     }
 }
 
-import { renderUsageChart } from '../../../src/renderer/modules/usage-chart.js';
+import { renderUsageChart } from '../../../modules/usage-chart.js';
 
 /**
  * Update time period display

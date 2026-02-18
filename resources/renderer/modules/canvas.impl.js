@@ -3,8 +3,8 @@
  * Manages the slide-out Canvas panel for A2UI content and local file iterations.
  */
 
-import { showToast } from '../../../src/renderer/components/dialog.js';
-import { state } from '../../../src/renderer/modules/state.js';
+import { showToast } from '../../../components/dialog.js';
+import { state } from '../../../modules/state.js';
 
 const CHAT_CANVAS_FILE_KEY = '__canvas_chat_output__';
 const CHAT_CANVAS_FILE_LABEL = 'Chat Canvas Output';
