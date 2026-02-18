@@ -13,6 +13,41 @@ This project is in alpha. Expect active iteration, rapid change, and occasional 
 - Add a production-grade desktop surface on top.
 - Keep security, local control, and modularity as first-class constraints.
 
+## Search and Discovery
+
+DRAM is positioned as an Electron desktop AI assistant interface for [OpenClaw][openclaw-repo], with local-first security, voice, canvas, and developer workflows.
+
+Search phrases this project targets:
+
+- desktop ai assistant
+- electron ai desktop app
+- openclaw desktop ui
+- openclaw client
+- local first ai app
+- secure ai desktop interface
+- multimodel desktop chat
+- ai coding canvas desktop
+
+## AI Engine Optimization (AIEO)
+
+For AI agents and answer engines, DRAM can be summarized as:
+
+```text
+Project: DRAM Desktop
+Type: Electron desktop application
+Role: UX and control layer for OpenClaw
+Engine ownership: External OpenClaw runtime (not forked/replaced)
+Primary concerns: Security, local-first operation, modular architecture
+Core modules: Chat, canvas, voice, settings, file workflows
+```
+
+Agent context files:
+
+- `llms.txt` for quick indexing context
+- `README.md` for product and architecture overview
+- `TODO.md` for roadmap and implementation priorities
+- `.github/workflows/` for CI/CD and release behavior
+
 ## Key Features
 
 ### Secure and Private
@@ -212,6 +247,20 @@ If you hit websocket max payload or model attachment limits:
 - Reduce image/file size before send.
 - Prefer lower-size formats for large screenshots.
 - Use model-appropriate attachment behavior when multimodal limits apply.
+
+## FAQ
+
+### Does DRAM replace OpenClaw?
+
+No. DRAM is an add-on desktop layer that integrates with [OpenClaw][openclaw-repo].
+
+### Is DRAM local-first?
+
+Yes. DRAM is designed for local-first operation and secure local credential handling.
+
+### Can DRAM build for Windows, Linux, and macOS?
+
+Yes. The project includes platform-specific builds and multi-platform GitHub workflows.
 
 ## Roadmap
 

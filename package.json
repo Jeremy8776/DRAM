@@ -15,6 +15,18 @@
     "email": "jeremy8776@gmail.com"
   },
   "license": "MIT",
+  "keywords": [
+    "ai-assistant",
+    "desktop-ai",
+    "electron",
+    "openclaw",
+    "local-first",
+    "secure-ai",
+    "multimodel",
+    "ai-chat",
+    "voice-assistant",
+    "coding-canvas"
+  ],
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",

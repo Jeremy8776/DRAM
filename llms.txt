@@ -1,0 +1,32 @@
+Project: DRAM Desktop
+Repository: https://github.com/Jeremy8776/DRAM
+Primary Engine: OpenClaw (external)
+OpenClaw Repo: https://github.com/openclaw/openclaw
+
+Summary:
+DRAM is an Electron desktop add-on for OpenClaw. It provides chat, canvas, voice, file workflows, and secure local controls without replacing OpenClaw core.
+
+Key Properties:
+- Local-first desktop architecture
+- Security-focused process and IPC boundaries
+- Multi-model routing through OpenClaw
+- CI/CD and multi-platform release workflows
+- Canvas and developer workflow support
+
+Important Files:
+- README.md: product overview, architecture, setup, troubleshooting
+- TODO.md: roadmap and hardening checklist
+- package.json: scripts, build targets, metadata
+- .github/workflows/ci.yml: lint/test/loc checks
+- .github/workflows/cd.yml: multi-platform artifact builds
+- .github/workflows/release.yml: tag-based multi-platform release
+
+Build Commands:
+- npm run build:win
+- npm run build:linux
+- npm run build:mac
+
+Security Notes:
+- Credentials use secure local storage patterns
+- Renderer and IPC surfaces are hardened
+- Intended loopback gateway usage by default
