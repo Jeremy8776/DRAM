@@ -24,4 +24,5 @@
    - `npm run check:pretag` (runs: typecheck -> test -> build runtime smoke -> bundle smoke)
 3. Bump version and changelog notes.
 4. Create and push a tag like `v1.0.1`.
-5. Verify release artifacts on GitHub Releases.
+5. Do not pre-create the GitHub release manually; let `release.yml` create/upload assets from the tag workflow.
+6. Verify release artifacts on GitHub Releases.

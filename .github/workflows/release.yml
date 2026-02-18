@@ -68,7 +68,28 @@ jobs:
           path: release-assets
           merge-multiple: true
 
+      - name: Inspect existing release state
+        id: release_state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" > release.json 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "immutable=$(jq -r '.immutable' release.json)" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "immutable=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip immutable pre-created release
+        if: steps.release_state.outputs.exists == 'true' && steps.release_state.outputs.immutable == 'true'
+        run: |
+          echo "::warning::Release for ${GITHUB_REF_NAME} already exists and is immutable. Skipping update to avoid failure."
+          echo "::warning::Use a fresh tag (e.g. patch increment) so workflow can create/upload release assets."
+
       - name: Publish GitHub Release
+        if: steps.release_state.outputs.exists != 'true' || steps.release_state.outputs.immutable != 'true'
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
