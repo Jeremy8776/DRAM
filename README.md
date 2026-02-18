@@ -1,7 +1,7 @@
 # DRAM Desktop
 
-DRAM is a secure desktop add-on for OpenClaw.
-It adds a local-first Electron interface, voice and canvas workflows, and operational guardrails without replacing or forking OpenClaw core.
+DRAM is a secure desktop add-on for [OpenClaw][openclaw-repo].
+It adds a local-first Electron interface, voice and canvas workflows, and operational guardrails without replacing or forking [OpenClaw][openclaw-repo] core.
 
 ## Alpha Release
 
@@ -9,7 +9,7 @@ This project is in alpha. Expect active iteration, rapid change, and occasional 
 
 ## Mission
 
-- Preserve OpenClaw as the external engine.
+- Preserve [OpenClaw][openclaw-repo] as the external engine.
 - Add a production-grade desktop surface on top.
 - Keep security, local control, and modularity as first-class constraints.
 
@@ -24,22 +24,22 @@ This project is in alpha. Expect active iteration, rapid change, and occasional 
 
 ### Advanced Chat and Workspace
 
-- Multi-model routing through OpenClaw.
+- Multi-model routing through [OpenClaw][openclaw-repo].
 - Tabbed chat sessions and session-aware workflows.
 - Voice mode support.
 - File attachments and workspace-linked interactions.
 - Canvas for code previews, generated content, and edit iterations.
 
-### Symbiotic OpenClaw Integration
+### Symbiotic [OpenClaw][openclaw-repo] Integration
 
-- Auto-discovery of existing OpenClaw installation and config.
+- Auto-discovery of existing [OpenClaw][openclaw-repo] installation and config.
 - Non-destructive config adoption.
 - Bidirectional sync between CLI-side changes and desktop state.
 - Gateway-managed runtime connection with reconnect behavior.
 
 ## How It Works
 
-DRAM does not replace OpenClaw. It runs as a desktop layer that talks to the OpenClaw gateway.
+DRAM does not replace [OpenClaw][openclaw-repo]. It runs as a desktop layer that talks to the [OpenClaw][openclaw-repo] gateway.
 
 ```text
 +-------------------------------------------------------------+
@@ -56,17 +56,17 @@ DRAM does not replace OpenClaw. It runs as a desktop layer that talks to the Ope
 +--------------------------|----------------------------------+
                            | WebSocket / mgmt requests
 +--------------------------v----------------------------------+
-| OpenClaw (external engine)                                  |
+| External engine (gateway)                                   |
 | Gateway | Agents | Plugins | Models | Skills | Config       |
 +-------------------------------------------------------------+
 ```
 
 ## User Flows
 
-### Existing OpenClaw User
+### Existing [OpenClaw][openclaw-repo] User
 
 1. Launch DRAM.
-2. DRAM discovers OpenClaw and existing config.
+2. DRAM discovers [OpenClaw][openclaw-repo] and existing config.
 3. User confirms adoption of settings.
 4. DRAM uses the same engine/config without breaking CLI workflow.
 
@@ -77,13 +77,21 @@ DRAM does not replace OpenClaw. It runs as a desktop layer that talks to the Ope
 3. Configure model/provider credentials.
 4. Start chatting with local desktop controls.
 
+## Screenshots
+
+Add product screenshots in `docs/screenshots/` and update the image paths below.
+
+![Chat](docs/screenshots/chat.png)
+![Canvas](docs/screenshots/canvas.png)
+![Settings](docs/screenshots/settings.png)
+
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
 - npm 9+
-- OpenClaw available (or installable by your setup flow)
+- [OpenClaw][openclaw-repo] available (or installable by your setup flow)
 
 ### Install and Run
 
@@ -112,15 +120,15 @@ Build output is written to `dist/`.
 
 ## Configuration
 
-DRAM interoperates with OpenClaw configuration at:
+DRAM interoperates with [OpenClaw][openclaw-repo] configuration at:
 
 - macOS/Linux: `~/.openclaw/openclaw.json`
-- Windows: `%USERPROFILE%\\.openclaw\\openclaw.json`
+- Windows: `%USERPROFILE%\.openclaw\openclaw.json`
 
 Behavior:
 
 - DRAM watches and syncs config changes.
-- DRAM writes config in compatible OpenClaw format.
+- DRAM writes config in compatible [OpenClaw][openclaw-repo] format.
 - CLI and desktop remain aligned.
 
 ## Development
@@ -166,7 +174,7 @@ Security is a core mission requirement.
 
 ## Troubleshooting
 
-### OpenClaw Not Found
+### [OpenClaw][openclaw-repo] Not Found
 
 - Confirm CLI is on PATH (`where openclaw` on Windows, `which openclaw` on macOS/Linux).
 - Verify `~/.openclaw/openclaw.json` exists and is valid.
@@ -174,7 +182,7 @@ Security is a core mission requirement.
 
 ### Config Validation Errors
 
-If OpenClaw reports unknown config keys, run:
+If [OpenClaw][openclaw-repo] reports unknown config keys, run:
 
 ```bash
 openclaw doctor --fix
@@ -196,8 +204,10 @@ Use `TODO.md` for the current implementation and hardening checklist, including 
 
 ## Acknowledgements
 
-DRAM is built to extend the OpenClaw ecosystem. Credit to the OpenClaw project and community.
+DRAM is built to extend the [OpenClaw][openclaw-repo] ecosystem. Credit to the [OpenClaw][openclaw-repo] project and community.
 
 ## License
 
 MIT
+
+[openclaw-repo]: https://github.com/openclaw/openclaw

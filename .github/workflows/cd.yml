@@ -16,15 +16,15 @@ jobs:
         target:
           - name: windows
             os: windows-latest
-            script: npm run build:win
+            script: npm run build:win -- --publish never
             artifact: dram-win-build
           - name: linux
             os: ubuntu-latest
-            script: npm run build:linux
+            script: npm run build:linux -- --publish never
             artifact: dram-linux-build
           - name: macos
             os: macos-latest
-            script: npm run build:mac
+            script: npm run build:mac -- --publish never
             artifact: dram-macos-build
 
     steps:

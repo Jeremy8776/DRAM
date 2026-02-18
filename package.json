@@ -10,7 +10,10 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "author": "DRAM",
+  "author": {
+    "name": "DRAM",
+    "email": "opensource@dram.dev"
+  },
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -85,7 +88,8 @@
         "deb"
       ],
       "icon": "resources/png/icon-256.png",
-      "category": "Utility"
+      "category": "Utility",
+      "maintainer": "DRAM <opensource@dram.dev>"
     }
   }
 }
