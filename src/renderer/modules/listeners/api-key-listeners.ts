@@ -482,7 +482,8 @@ async function refreshBackupsList() {
 
 // Auto-initialize version display when settings tab is shown
 document.addEventListener('settingsTabChanged', async (e) => {
-    if (e.detail?.tab === 'gateway') {
+    const event = e as CustomEvent<{ tab?: string }>;
+    if (event.detail?.tab === 'gateway') {
         await refreshOpenClawVersion();
         await refreshBackupsList();
     }
