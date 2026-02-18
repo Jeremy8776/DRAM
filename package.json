@@ -51,6 +51,7 @@
     "check:loc:desktop": "node scripts/check-file-loc.cjs --root src --warn 500 --fail 700",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
+    "check:pretag": "node scripts/pretag-check.cjs",
     "test:desktop": "node test/desktop-security.test.js && node test/path-guards.test.js",
     "test:ipc": "npm run check:ipc && node test/system-ipc.test.js && node test/skills-ipc.test.js && node test/plugins-ipc.test.js",
     "test": "npm run build:runtime && npm run test:desktop && npm run test:ipc",

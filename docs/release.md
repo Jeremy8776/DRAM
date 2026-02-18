@@ -20,6 +20,8 @@
 ## Recommended Release Steps
 
 1. Ensure CI passes on `main`.
-2. Bump version and changelog notes.
-3. Create and push a tag like `v1.0.1`.
-4. Verify release artifacts on GitHub Releases.
+2. Run local pre-tag checks in this order:
+   - `npm run check:pretag` (runs: typecheck -> test -> build runtime smoke -> bundle smoke)
+3. Bump version and changelog notes.
+4. Create and push a tag like `v1.0.1`.
+5. Verify release artifacts on GitHub Releases.

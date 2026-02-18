@@ -48,11 +48,20 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
   - [ ] Fix failing `test/plugins-ipc.test.js` model payload shape expectation.
   - [ ] Keep `npm test` fully passing.
   - [ ] Reduce lint warnings to zero or explicitly codify allowed warnings.
+- [ ] Release/tag hygiene:
+  - [ ] Only create release tags from commits that already passed CI on `main`.
+  - [x] Add a pre-tag check script (`typecheck`, `test`, build smoke) and document required order.
+  - [ ] If a tagged release fails, cut a new patch tag instead of reusing the failed tag.
 - [ ] Add pre-release gate script:
   - [ ] `check:loc`
   - [ ] `lint`
   - [ ] `test`
   - [ ] build smoke
+- [ ] Installer coverage:
+  - [ ] Build and verify installer artifacts for each supported OS release:
+    - [ ] Windows installer/portable
+    - [ ] Linux AppImage + deb
+    - [ ] macOS dmg + zip
 
 ## P2 - Architecture / Refactor (next session)
 
