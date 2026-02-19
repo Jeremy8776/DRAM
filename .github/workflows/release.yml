@@ -94,6 +94,15 @@ jobs:
           echo "::warning::Release for ${GITHUB_REF_NAME} already exists and is immutable. Skipping update to avoid failure."
           echo "::warning::Use a fresh tag (e.g. patch increment) so workflow can create/upload release assets."
 
+      - name: Delete existing mutable release
+        if: steps.release_state.outputs.exists == 'true' && steps.release_state.outputs.immutable != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          echo "Deleting mutable existing release for ${tag} to avoid stale asset update conflicts."
+          gh release delete "${tag}" --yes --cleanup-tag=false
+
       - name: Publish GitHub Release
         if: steps.release_state.outputs.exists != 'true' || steps.release_state.outputs.immutable != 'true'
         uses: softprops/action-gh-release@v2
