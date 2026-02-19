@@ -6,11 +6,17 @@ import { escapeHtml } from './dialog-utils.js';
  * @param {string} options.message
  * @param {string} options.type
  * @param {number} options.duration
+ * @param {string} options.actionLabel
+ * @param {() => void | Promise<void>} options.onAction
+ * @param {boolean} options.dismissOnAction
  */
 export function showToast({
     message = '',
     type = 'info',
-    duration = 3000
+    duration = 3000,
+    actionLabel = '',
+    onAction = null,
+    dismissOnAction = true
 } = {}) {
     const toast = document.createElement('div');
 
@@ -56,7 +62,20 @@ export function showToast({
         <span style="
             font-size: 13px;
             color: var(--text-primary, #e0e0e0);
+            flex: 1;
         ">${escapeHtml(message)}</span>
+        ${actionLabel ? `<button type="button" class="toast-action-btn" style="
+            border: 1px solid ${config.color}55;
+            background: ${config.bg};
+            color: ${config.color};
+            border-radius: 5px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            flex-shrink: 0;
+        ">${escapeHtml(actionLabel)}</button>` : ''}
     `;
 
     if (!document.getElementById('toast-animations')) {
@@ -77,10 +96,30 @@ export function showToast({
 
     document.body.appendChild(toast);
 
-    setTimeout(() => {
+    const dismiss = () => {
         toast.style.animation = 'toastSlideOut 0.2s ease forwards';
         setTimeout(() => toast.remove(), 200);
-    }, duration);
+    };
+
+    if (actionLabel && typeof onAction === 'function') {
+        const actionBtn = toast.querySelector('.toast-action-btn');
+        actionBtn?.addEventListener('click', async () => {
+            try {
+                await onAction();
+            } catch (err) {
+                console.warn('[Toast] Action handler failed:', err?.message || err);
+            }
+            if (dismissOnAction) dismiss();
+        });
+    }
+
+    if (Number(duration) > 0) {
+        setTimeout(() => {
+            dismiss();
+        }, duration);
+    }
+
+    return { dismiss, element: toast };
 }
 
 

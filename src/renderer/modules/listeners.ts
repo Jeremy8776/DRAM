@@ -10,6 +10,7 @@ import { setupUtilListeners } from './listeners/util-listeners.js';
 import { setupMemoryListeners } from './listeners/memory-listeners.js';
 import { setupUiPromptListeners } from './listeners/ui-prompt-listeners.js';
 import { setupOpenClawManagementListeners } from './listeners/api-key-listeners.js';
+import { setupUpdaterListeners, shutdownUpdaterListeners } from './listeners/updater-listeners.js';
 
 export { resetConnectionRetries, shutdownGatewayListeners, clearPendingRetries } from './listeners/gateway-listeners.js';
 
@@ -19,6 +20,7 @@ export { resetConnectionRetries, shutdownGatewayListeners, clearPendingRetries }
  */
 export function shutdownAllListeners() {
     shutdownGatewayListeners();
+    shutdownUpdaterListeners();
     // Add other cleanup as needed
 }
 
@@ -65,6 +67,7 @@ export function setupIpcListeners() {
 
     setupUiPromptListeners();
     setupOpenClawManagementListeners();
+    setupUpdaterListeners();
 }
 
 
