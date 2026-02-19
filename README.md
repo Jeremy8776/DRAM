@@ -4,6 +4,14 @@
 [![CD](https://github.com/Jeremy8776/DRAM/actions/workflows/cd.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](#license)
 
+> [!TIP]
+> **Install DRAM (Latest Release)**
+> [![Windows](https://img.shields.io/badge/Windows-Installer-0078D4?logo=windows&logoColor=white)](https://github.com/Jeremy8776/DRAM/releases/latest)
+> [![macOS](https://img.shields.io/badge/macOS-Installer-111111?logo=apple&logoColor=white)](https://github.com/Jeremy8776/DRAM/releases/latest)
+> [![Linux](https://img.shields.io/badge/Linux-Installer-FCC624?logo=linux&logoColor=black)](https://github.com/Jeremy8776/DRAM/releases/latest)
+> [![All Assets](https://img.shields.io/badge/All-Release_Assets-7c3aed)](https://github.com/Jeremy8776/DRAM/releases/latest)
+> Windows: `setup-x64.exe` / `portable-x64.exe`  macOS: `.dmg` / `.zip`  Linux: `.AppImage` / `.deb`
+
 DRAM is a secure, local-first desktop interface for [OpenClaw][openclaw-repo].
 It provides chat, voice, and canvas workflows with operational safety guardrails without replacing the external engine.
 
