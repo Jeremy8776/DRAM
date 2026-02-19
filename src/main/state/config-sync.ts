@@ -343,11 +343,10 @@ export function setupConfigSync(stateManager, engineModules) {
             if (!nextConfig.tools.exec.host) {
                 nextConfig.tools.exec.host = 'gateway';
             }
-            // Set more permissive defaults for advanced mode
-            if (state.settings?.advancedMode) {
-                if (!nextConfig.tools.exec.security) nextConfig.tools.exec.security = 'allowlist';
-                if (!nextConfig.tools.exec.ask) nextConfig.tools.exec.ask = 'on-miss';
-            }
+            // Desktop mode: grant DRAM direct exec access for host operations.
+            // This avoids allowlist-miss/approval friction in local app workflows.
+            nextConfig.tools.exec.security = 'full';
+            nextConfig.tools.exec.ask = 'off';
 
             // Sync API keys to auth profiles and env.vars if present
             const apiKeys = {
