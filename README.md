@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/Jeremy8776/DRAM/actions/workflows/ci.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/ci.yml)
 [![CD](https://github.com/Jeremy8776/DRAM/actions/workflows/cd.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/cd.yml)
-[![Release](https://github.com/Jeremy8776/DRAM/actions/workflows/release.yml/badge.svg)](https://github.com/Jeremy8776/DRAM/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](#license)
 
 DRAM is a secure, local-first desktop interface for [OpenClaw][openclaw-repo].
