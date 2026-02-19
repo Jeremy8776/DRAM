@@ -5,9 +5,9 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
 ## P0 - Security and Safety (Blockers)
 
 - [ ] Enforce outbound payload caps before `chat.send`:
-  - [x] Hard cap single attachment bytes to engine limits.
-  - [x] Hard cap total websocket frame payload to avoid `1009 Max payload size exceeded`.
-  - [x] Reject send with actionable UI error before transport failure.
+  - [x] ~~Hard cap single attachment bytes to engine limits.~~
+  - [x] ~~Hard cap total websocket frame payload to avoid `1009 Max payload size exceeded`.~~
+  - [x] ~~Reject send with actionable UI error before transport failure.~~
 - [ ] Centralize model-aware attachment policy:
   - [ ] Keep per-model limits in one module (size, count, modality).
   - [ ] Add explicit fallback defaults when model metadata is missing.
@@ -35,8 +35,8 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
   - [ ] Preserve pending UI state cleanly after WS reconnect.
   - [ ] Avoid duplicate retries for one failed oversized send.
 - [ ] Update channel hardening:
-  - [x] Add GitHub release/version listener to detect new app versions.
-  - [x] Enable auto-update check on app launch (with safe defaults + user control).
+  - [x] ~~Add GitHub release/version listener to detect new app versions.~~
+  - [x] ~~Enable auto-update check on app launch (with safe defaults + user control).~~
   - [ ] Add rollback flow in Settings for failed/bad updates.
 - [ ] Plugin/Skill validation:
   - [ ] Add A/B testing harness for plugins and skills.
@@ -50,35 +50,35 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
   - [ ] Reduce lint warnings to zero or explicitly codify allowed warnings.
 - [ ] Release/tag hygiene:
   - [ ] Only create release tags from commits that already passed CI on `main`.
-  - [x] Add a pre-tag check script (`typecheck`, `test`, build smoke) and document required order.
+  - [x] ~~Add a pre-tag check script (`typecheck`, `test`, build smoke) and document required order.~~
   - [ ] If a tagged release fails, cut a new patch tag instead of reusing the failed tag.
 - [ ] Add pre-release gate script:
   - [ ] `check:loc`
   - [ ] `lint`
   - [ ] `test`
   - [ ] build smoke
-- [x] Installer coverage:
-  - [x] Build and verify installer artifacts for each supported OS release:
-    - [x] Windows installer/portable
-    - [x] Linux AppImage + deb
-    - [x] macOS dmg + zip
+- [x] ~~Installer coverage:~~
+  - [x] ~~Build and verify installer artifacts for each supported OS release:~~
+    - [x] ~~Windows installer/portable~~
+    - [x] ~~Linux AppImage + deb~~
+    - [x] ~~macOS dmg + zip~~
 
 ## P2 - Architecture / Refactor (next session)
 
-- [x] LOC policy compliance (warn >500, fail >700):
-  - [x] Refactor oversized modules to pass `npm run check:loc`.
-  - [x] Keep all source files below warn threshold.
+- [x] ~~LOC policy compliance (warn >500, fail >700):~~
+  - [x] ~~Refactor oversized modules to pass `npm run check:loc`.~~
+  - [x] ~~Keep all source files below warn threshold.~~
 
 ## P2 - TypeScript Migration Program
 
-- [x] Execute migration plan in `docs/typescript-migration-plan.md`.
+- [x] ~~Execute migration plan in `docs/typescript-migration-plan.md`.~~
 - [ ] Phase 0 (Foundation):
-  - [x] Add root `tsconfig.base.json`.
-  - [x] Add root `tsconfig.json`.
-  - [x] Add `npm run typecheck`.
-  - [x] Wire non-blocking CI typecheck job.
+  - [x] ~~Add root `tsconfig.base.json`.~~
+  - [x] ~~Add root `tsconfig.json`.~~
+  - [x] ~~Add `npm run typecheck`.~~
+  - [x] ~~Wire non-blocking CI typecheck job.~~
 - [ ] Phase 1 (Contracts):
-  - [x] Create `src/shared/types` for IPC/socket/canvas/engine contracts.
+  - [x] ~~Create `src/shared/types` for IPC/socket/canvas/engine contracts.~~
   - [ ] Add runtime guard coverage for boundary payloads.
 - [ ] Phase 2 (Main + Preload):
   - [ ] Convert `src/main` and `src/preload` critical boundary files first.
@@ -99,7 +99,7 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
 - [ ] Update `README.md`:
   - [ ] Add explicit security model section (key handling, local-only ports, redaction).
   - [ ] Add OpenClaw compatibility contract section.
-  - [ ] Link this TODO as project roadmap.
+  - [x] ~~Link this TODO as project roadmap.~~
 - [ ] Add `RELEASE_CHECKLIST.md` for consistent private/public release flow.
 
 ## GitHub Prep Checklist (Current Branch)
