@@ -8,6 +8,7 @@ let lastAnnouncedVersion = '';
 let lastDownloadBucket = -1;
 let restartToastVersion = '';
 const shownAt = new Map();
+const UPDATER_TOAST_ID = 'updater-status';
 
 function normalizeVersion(value) {
     const raw = String(value || '').trim();
@@ -36,7 +37,8 @@ function showFoundVersionToast(version) {
     showToast({
         message: `Update available${suffix}. Downloading in the background.`,
         type: 'info',
-        duration: 5000
+        duration: 5000,
+        id: UPDATER_TOAST_ID
     });
 }
 
@@ -44,7 +46,8 @@ function showDownloadingToast(percent) {
     showToast({
         message: `Downloading update: ${percent}%`,
         type: 'info',
-        duration: 2500
+        duration: 2500,
+        id: UPDATER_TOAST_ID
     });
 }
 
@@ -54,6 +57,7 @@ function showRestartToast(version) {
         message: `Update${detail} is ready. Restart to finish installing.`,
         type: 'success',
         duration: 15000,
+        id: UPDATER_TOAST_ID,
         actionLabel: 'Restart now',
         onAction: async () => {
             await window.dram.updater.installNow();
@@ -113,7 +117,8 @@ function handleUpdaterStatus(payload: any = {}) {
             showToast({
                 message: `Update check issue: ${message}`,
                 type: 'warning',
-                duration: 6000
+                duration: 6000,
+                id: UPDATER_TOAST_ID
             });
         }
         return;
@@ -125,7 +130,8 @@ function handleUpdaterStatus(payload: any = {}) {
             showToast({
                 message,
                 type: 'warning',
-                duration: 6000
+                duration: 6000,
+                id: UPDATER_TOAST_ID
             });
         }
     }

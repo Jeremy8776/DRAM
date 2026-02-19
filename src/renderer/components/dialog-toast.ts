@@ -1,5 +1,18 @@
 import { escapeHtml } from './dialog-utils.js';
 
+const activeToastsById = new Map();
+
+function clearToastById(id) {
+    const existing = activeToastsById.get(id);
+    if (!existing) return;
+    try {
+        existing.element.remove();
+    } catch {
+        // ignore remove failures
+    }
+    activeToastsById.delete(id);
+}
+
 /**
  * Show a styled toast notification.
  * @param {Object} options
@@ -9,6 +22,8 @@ import { escapeHtml } from './dialog-utils.js';
  * @param {string} options.actionLabel
  * @param {() => void | Promise<void>} options.onAction
  * @param {boolean} options.dismissOnAction
+ * @param {string} options.id
+ * @param {boolean} options.replace
  */
 export function showToast({
     message = '',
@@ -16,8 +31,15 @@ export function showToast({
     duration = 3000,
     actionLabel = '',
     onAction = null,
-    dismissOnAction = true
+    dismissOnAction = true,
+    id = '',
+    replace = true
 } = {}) {
+    const toastId = String(id || '').trim();
+    if (toastId && replace) {
+        clearToastById(toastId);
+    }
+
     const toast = document.createElement('div');
 
     const typeConfig = {
@@ -97,9 +119,23 @@ export function showToast({
     document.body.appendChild(toast);
 
     const dismiss = () => {
+        if (toast.dataset.closing === '1') return;
+        toast.dataset.closing = '1';
         toast.style.animation = 'toastSlideOut 0.2s ease forwards';
-        setTimeout(() => toast.remove(), 200);
+        setTimeout(() => {
+            toast.remove();
+            if (toastId) {
+                const active = activeToastsById.get(toastId);
+                if (active?.element === toast) {
+                    activeToastsById.delete(toastId);
+                }
+            }
+        }, 200);
     };
+
+    if (toastId) {
+        activeToastsById.set(toastId, { dismiss, element: toast });
+    }
 
     if (actionLabel && typeof onAction === 'function') {
         const actionBtn = toast.querySelector('.toast-action-btn');

@@ -10,7 +10,7 @@ const require = createRequire(import.meta.url);
 const { autoUpdater } = require('electron-updater');
 import fs from 'fs';
 import path from 'path';
-import { app, dialog } from 'electron';
+import { app } from 'electron';
 
 const GITHUB_POLL_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
@@ -125,9 +125,6 @@ export class AutoUpdater {
       this.lastError = null;
       this.updateDownloaded = true;
       this.sendStatusToRenderer('downloaded', info);
-
-      // Notify user
-      this.notifyUpdateReady(info);
     });
 
     autoUpdater.on('error', (err) => {
@@ -299,26 +296,6 @@ export class AutoUpdater {
       this.sendStatusToRenderer('error', { message: this.lastError });
       await this.checkGitHubRelease({ force, reason });
       return { ok: false, message: this.lastError };
-    }
-  }
-
-  /**
-   * Notify user that update is ready
-   */
-  async notifyUpdateReady(info) {
-    const mainWindow = this.windowManager.getMainWindow();
-
-    const result = await dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      title: 'Update Ready',
-      message: `Version ${info.version} has been downloaded.`,
-      detail: 'The update will be installed when you quit the application. Would you like to restart now?',
-      buttons: ['Restart Now', 'Later'],
-      defaultId: 0
-    });
-
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
     }
   }
 
