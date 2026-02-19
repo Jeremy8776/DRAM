@@ -52,11 +52,14 @@ jobs:
       - name: Verify installer artifacts
         run: npm run verify:installers -- --platform ${{ matrix.target.platform }}
 
+      - name: Collect release assets
+        run: npm run collect:release-assets -- --from dist --to dist-release --platform ${{ matrix.target.platform }}
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.artifact }}
-          path: dist/**
+          path: dist-release/**
           if-no-files-found: error
           retention-days: 7
 

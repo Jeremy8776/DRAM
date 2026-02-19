@@ -1,6 +1,6 @@
 {
   "name": "dram-desktop",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Secure local-first desktop layer for OpenClaw featuring voice, canvas, and hardened security guardrails.",
   "type": "module",
   "main": "runtime/main/index-wrapper.cjs",
@@ -50,6 +50,7 @@
     "build:mac:with-engine": "npm run build:runtime && npm run bundle-engine && electron-builder --mac --config.extraResources[0].from=resources/engine --config.extraResources[0].to=engine",
     "build:linux:with-engine": "npm run build:runtime && npm run bundle-engine && electron-builder --linux --config.extraResources[0].from=resources/engine --config.extraResources[0].to=engine",
     "verify:installers": "node scripts/verify-installers.cjs",
+    "collect:release-assets": "node scripts/collect-release-assets.cjs",
     "bundle-engine": "node scripts/bundle-engine.cjs",
     "check:ipc": "node scripts/audit-ipc.cjs",
     "check:loc": "node scripts/check-file-loc.cjs --root src --root packages/dram-plugin/src --warn 500 --fail 700",
