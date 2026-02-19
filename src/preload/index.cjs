@@ -192,6 +192,18 @@ const dramApi = {
         // Test Ollama Connection
         testOllamaConnection: (url) => safeInvoke('util:testOllamaConnection', url)
     },
+    updater: {
+        getStatus: () => safeInvoke('updater:getStatus'),
+        checkNow: () => safeInvoke('updater:checkNow'),
+        installNow: () => safeInvoke('updater:installNow'),
+        getEnabled: () => safeInvoke('updater:getEnabled'),
+        setEnabled: (enabled) => safeInvoke('updater:setEnabled', enabled === true),
+        onStatus: (callback) => {
+            const handler = (event, data) => callback(data);
+            ipcRenderer.on('updater:status', handler);
+            return () => ipcRenderer.removeListener('updater:status', handler);
+        }
+    },
     socket: {
         connect: (url, token) => ipcRenderer.send('socket:connect', { url, token }),
         send: (payload) => ipcRenderer.send('socket:send', payload),

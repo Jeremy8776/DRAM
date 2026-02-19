@@ -20,6 +20,7 @@ import { registerWindowHandlers } from './ipc/window.js';
 import { registerMigrationHandlers } from './ipc/migration.js';
 import { registerCanvasHandlers } from './ipc/canvas.js';
 import { registerOpenClawHandlers } from './ipc/openclaw.js';
+import { registerUpdaterHandlers } from './ipc/updater.js';
 
 /**
  * Secure debug logging to file (Windows console capture workaround)
@@ -101,7 +102,7 @@ export function createIpcOrchestrator(ipcMain, debugLog) {
 /**
  * Register all IPC handlers
  */
-export function registerIpcHandlers(ipcMain, stateManager, windowManager) {
+export function registerIpcHandlers(ipcMain, stateManager, windowManager, getAutoUpdater = () => null) {
   debugLog('=== IPC Handlers registering (Modular) ===');
 
   const ipc = createIpcOrchestrator(ipcMain, debugLog);
@@ -116,6 +117,7 @@ export function registerIpcHandlers(ipcMain, stateManager, windowManager) {
   registerMigrationHandlers(ipc, stateManager.secureStorage, windowManager, debugLog);
   registerCanvasHandlers(ipc, stateManager.secureStorage, windowManager, debugLog);
   registerOpenClawHandlers(ipc, stateManager, windowManager, debugLog);
+  registerUpdaterHandlers(ipc, stateManager.secureStorage, getAutoUpdater, debugLog);
 
   // Secure internal bridge
   registerBridgeHandlers(ipc, stateManager, windowManager, debugLog);

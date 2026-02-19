@@ -50,6 +50,7 @@ export interface DramBridgeApi {
   fs: BridgeNamespace;
   canvas: CanvasApi;
   util: BridgeNamespace;
+  updater: BridgeNamespace;
   socket: SocketApi;
   on(channel: string, callback: (...args: any[]) => void): Unsubscribe;
   platform: string;

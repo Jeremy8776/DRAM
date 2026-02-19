@@ -41,10 +41,15 @@
     "dev:fresh": "node scripts/dev-fresh.cjs",
     "dev:wizard": "node scripts/dev-wizard.cjs",
     "build:runtime": "node scripts/build-runtime.cjs",
-    "build": "npm run build:runtime && npm run bundle-engine && electron-builder",
-    "build:win": "npm run build:runtime && npm run bundle-engine && electron-builder --win",
-    "build:mac": "npm run build:runtime && npm run bundle-engine && electron-builder --mac",
-    "build:linux": "npm run build:runtime && npm run bundle-engine && electron-builder --linux",
+    "build": "npm run build:runtime && electron-builder",
+    "build:win": "npm run build:runtime && electron-builder --win",
+    "build:mac": "npm run build:runtime && electron-builder --mac",
+    "build:linux": "npm run build:runtime && electron-builder --linux",
+    "build:with-engine": "npm run build:runtime && npm run bundle-engine && electron-builder --config.extraResources[0].from=resources/engine --config.extraResources[0].to=engine",
+    "build:win:with-engine": "npm run build:runtime && npm run bundle-engine && electron-builder --win --config.extraResources[0].from=resources/engine --config.extraResources[0].to=engine",
+    "build:mac:with-engine": "npm run build:runtime && npm run bundle-engine && electron-builder --mac --config.extraResources[0].from=resources/engine --config.extraResources[0].to=engine",
+    "build:linux:with-engine": "npm run build:runtime && npm run bundle-engine && electron-builder --linux --config.extraResources[0].from=resources/engine --config.extraResources[0].to=engine",
+    "verify:installers": "node scripts/verify-installers.cjs",
     "bundle-engine": "node scripts/bundle-engine.cjs",
     "check:ipc": "node scripts/audit-ipc.cjs",
     "check:loc": "node scripts/check-file-loc.cjs --root src --root packages/dram-plugin/src --warn 500 --fail 700",
@@ -80,23 +85,37 @@
     "files": [
       "runtime/**/*",
       "resources/**/*",
-      "!resources/engine/node_modules/.cache",
-      "!resources/engine/node_modules/.pnpm",
+      "!resources/engine/**",
       "package.json"
     ],
-    "extraResources": [
+    "asar": true,
+    "publish": [
       {
-        "from": "resources/engine",
-        "to": "engine"
+        "provider": "github",
+        "owner": "Jeremy8776",
+        "repo": "DRAM"
       }
     ],
-    "asar": true,
     "win": {
       "target": [
+        "nsis",
         "portable"
       ],
       "icon": "resources/platform/windows/icon.ico",
       "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-setup-${arch}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "installerHeader": "resources/platform/windows/installer-header.bmp",
+      "installerSidebar": "resources/platform/windows/installer-sidebar.bmp",
+      "uninstallerSidebar": "resources/platform/windows/installer-sidebar.bmp"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable-${arch}.${ext}"
     },
     "mac": {
       "target": [

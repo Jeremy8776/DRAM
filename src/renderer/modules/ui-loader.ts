@@ -11,6 +11,7 @@ import { renderUsageView } from '../components/usage-view.js';
 import { updateHeroCapabilities } from './renderer.js';
 import { escapeHtml } from './utils.js';
 import { state } from './state.js';
+import { getOnboardingComplete, getOnboardingStorageKey } from './onboarding-state.js';
 
 // Fallback data for when engine is not available (fresh install)
 function getFallbackModels() {
@@ -146,7 +147,8 @@ export async function loadUiComponents() {
     progress(30, 'Checking configuration...');
 
     // Check onboarding status early so fresh users do not trigger heavy engine fetches yet.
-    const onboardingComplete = await window.dram.storage.get('dram.onboardingComplete');
+    const onboardingComplete = await getOnboardingComplete();
+    const onboardingKey = await getOnboardingStorageKey();
     const wsPath = await window.dram.storage.get('settings.workspacePath');
 
     // Check for ANY configured API key (not just Anthropic)
@@ -156,7 +158,7 @@ export async function loadUiComponents() {
     const apiKeyGroq = await window.dram.storage.get('settings.apiKeyGroq');
     const hasApiKey = !!(apiKeyAnthropic || apiKeyOpenAI || apiKeyGoogle || apiKeyGroq);
 
-    console.log('UI: Onboarding check:', redactObject({ onboardingComplete, wsPath, hasApiKey }));
+    console.log('UI: Onboarding check:', redactObject({ onboardingKey, onboardingComplete, wsPath, hasApiKey }));
 
     // Show wizard if onboarding incomplete OR workspace path missing.
     // For fresh users, skip early heavy util fetch and use fallback catalog until setup progresses.

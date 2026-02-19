@@ -13,9 +13,15 @@
 
 ## Build Targets
 
-- Windows: `npm run build:win`
+- Windows: `npm run build:win` (NSIS setup + portable)
 - Linux: `npm run build:linux`
 - macOS: `npm run build:mac`
+
+Installer artifact verification is enforced in `cd.yml` and `release.yml` via:
+
+- `npm run verify:installers -- --platform windows`
+- `npm run verify:installers -- --platform linux`
+- `npm run verify:installers -- --platform macos`
 
 ## Recommended Release Steps
 

@@ -277,7 +277,7 @@ if (!gotTheLock) {
       const stateManager = getStateManager(secureStorage, windowManager);
       await stateManager.initialize();
 
-      registerIpcHandlers(ipcMain, stateManager, windowManager);
+      registerIpcHandlers(ipcMain, stateManager, windowManager, () => autoUpdater || null);
       Menu.setApplicationMenu(null);
 
       await windowManager.createMainWindow();
@@ -287,8 +287,8 @@ if (!gotTheLock) {
       if (minimizeToTray) trayManager = new TrayManager(windowManager);
 
       if (app.isPackaged) {
-        autoUpdater = new AutoUpdater(windowManager);
-        autoUpdater.checkForUpdates();
+        autoUpdater = new AutoUpdater(windowManager, stateManager.secureStorage);
+        autoUpdater.checkForUpdates({ reason: 'startup' });
       }
 
       // 6. Background Engine Initialization & Config Sync
@@ -364,6 +364,9 @@ if (!gotTheLock) {
         if (trayManager) {
           trayManager.destroy();
           trayManager = null;
+        }
+        if (autoUpdater) {
+          autoUpdater.dispose();
         }
 
         const engine = peekDramEngine();

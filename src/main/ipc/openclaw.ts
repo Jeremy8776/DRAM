@@ -21,6 +21,52 @@ const quoteForCmd = (arg) => {
   if (!/[ \t"&|<>^()]/.test(str)) return str;
   return `"${str.replace(/"/g, '""')}"`;
 };
+const pathExists = async (targetPath) => {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const resolveCliEntryFromInstallDir = async (installDir) => {
+  if (!installDir) return null;
+  const packageJsonPath = path.join(installDir, 'package.json');
+  if (!(await pathExists(packageJsonPath))) return null;
+
+  let packageEntry = null;
+  try {
+    const packageRaw = await fs.readFile(packageJsonPath, 'utf-8');
+    const pkg = JSON.parse(packageRaw);
+    const bin = pkg?.bin;
+    packageEntry = typeof bin === 'string'
+      ? bin
+      : (bin && typeof bin === 'object'
+        ? (bin.openclaw || bin.cli || Object.values(bin).find((value) => typeof value === 'string'))
+        : null);
+  } catch {
+    void 0;
+  }
+
+  const candidates = [];
+  if (typeof packageEntry === 'string' && packageEntry.trim()) {
+    candidates.push(path.resolve(installDir, packageEntry));
+  }
+  candidates.push(
+    path.join(installDir, 'openclaw.mjs'),
+    path.join(installDir, 'openclaw.js'),
+    path.join(installDir, 'bin', 'openclaw.mjs'),
+    path.join(installDir, 'bin', 'openclaw.js'),
+    path.join(installDir, 'dist', 'cli.mjs'),
+    path.join(installDir, 'dist', 'cli.js')
+  );
+
+  for (const candidate of candidates) {
+    if (await pathExists(candidate)) return candidate;
+  }
+
+  return null;
+};
 const resolveConfigCandidate = (candidatePath) => {
   if (!candidatePath) return null;
   const normalized = candidatePath.trim();
@@ -115,6 +161,29 @@ export class OpenClawManager {
     return result;
   }
   async _findCli() {
+    const bundledInstallDirs = new Set();
+    if (typeof process.resourcesPath === 'string' && process.resourcesPath.trim()) {
+      bundledInstallDirs.add(path.join(process.resourcesPath, 'engine'));
+      bundledInstallDirs.add(path.join(process.resourcesPath, 'resources', 'engine'));
+    }
+    try {
+      const appPath = app.getAppPath();
+      if (typeof appPath === 'string' && appPath.trim()) {
+        bundledInstallDirs.add(path.join(appPath, '..', 'engine'));
+        bundledInstallDirs.add(path.join(appPath, 'resources', 'engine'));
+      }
+    } catch {
+      void 0;
+    }
+    bundledInstallDirs.add(path.join(process.cwd(), 'resources', 'engine'));
+
+    for (const installDir of bundledInstallDirs) {
+      const bundledCliPath = await resolveCliEntryFromInstallDir(installDir);
+      if (!bundledCliPath) continue;
+      this.debugLog('[OpenClaw] Found bundled CLI at:', bundledCliPath);
+      return { found: true, path: bundledCliPath, source: 'bundled' };
+    }
+
     try {
       const { stdout: npmRoot } = await execAsync('npm root -g', withWindowsHide());
       const globalPath = path.join(npmRoot.trim(), 'openclaw');

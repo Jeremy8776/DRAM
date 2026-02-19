@@ -9,6 +9,7 @@ import { updateConnectionUI } from './connection-ui.js';
 import { loadUserSettings } from './settings.js';
 import { redactObject } from './logger.js';
 import { PLUGIN_SETUP_REQUIREMENTS } from '../data/plugin-metadata.js';
+import { setOnboardingComplete } from './onboarding-state.js';
 
 const normalizeSecretInput = (rawValue) => {
     const value = typeof rawValue === 'string' ? rawValue.trim() : '';
@@ -422,7 +423,7 @@ export async function finishWizardIntegrations(wizardState, wizardContainer) {
         console.error('Failed to update plugins/skills in config:', e);
     }
 
-    await window.dram.storage.set('dram.onboardingComplete', true);
+    await setOnboardingComplete(true);
     if (wizardContainer) {
         wizardContainer.classList.add('hidden');
         wizardContainer.style.display = 'none';

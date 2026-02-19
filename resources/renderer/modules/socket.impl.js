@@ -28,6 +28,7 @@ const DESKTOP_CANVAS_HINT = [
 const VALID_FRAME_TYPES = new Set(['res', 'event', 'agent', 'chat', 'connected']);
 const MAX_INBOUND_FRAME_BYTES = 6_000_000;
 const MAX_OUTBOUND_REQUEST_BYTES = 4_650_000;
+const CONNECT_TIMEOUT_MS = 20000;
 const DRAM_CANVAS_FILE_CONTEXT_TAG = '[DRAM_CANVAS_FILE_CONTEXT]';
 const CANVAS_CONTEXT_CHIP_ID = 'canvas-context-chip';
 const FILE_ATTACHMENT_CONTEXT_TAG = '[DRAM_FILE_ATTACHMENTS]';
@@ -379,6 +380,34 @@ export async function refreshCanvasContextChipForDraft(text) {
 
 let voiceCapabilityProbePromise = null;
 let canvasChipRefreshSequence = 0;
+let connectTimeoutId = null;
+
+function clearConnectTimeout() {
+    if (connectTimeoutId) {
+        clearTimeout(connectTimeoutId);
+        connectTimeoutId = null;
+    }
+}
+
+function armConnectTimeout() {
+    clearConnectTimeout();
+    connectTimeoutId = setTimeout(() => {
+        if (!state.connecting || state.connected) return;
+        state.connecting = false;
+        state.connected = false;
+        updateConnectionUI('error', 'Gateway handshake timed out');
+        log.warn('Gateway handshake timed out after', CONNECT_TIMEOUT_MS, 'ms');
+    }, CONNECT_TIMEOUT_MS);
+}
+
+function markConnectedFromLiveTraffic() {
+    if (!state.connected) {
+        state.connecting = false;
+        state.connected = true;
+        clearConnectTimeout();
+        updateConnectionUI('connected');
+    }
+}
 
 function containsVoiceStreamCapability(value, seen = new Set(), depth = 0) {
     if (depth > 8 || value == null) return false;
@@ -437,6 +466,7 @@ export async function connect() {
     state.connecting = true;
     state.voiceStreamCapabilityChecked = false;
     state.voiceStreamSupported = false;
+    armConnectTimeout();
 
     // Immediate UI feedback across all indicators
     updateConnectionUI('connecting');
@@ -519,6 +549,7 @@ export function handleMessage(data) {
             handleChatEvent(msg, { onComplete: clearRequestTimeout });
             break;
         case 'connected':
+            clearConnectTimeout();
             state.connecting = false;
             state.connected = true;
             updateConnectionUI('connected');
@@ -558,6 +589,7 @@ function handleResponse(msg) {
             || msg.payload?.type === 'connect-ok';
 
         if (isHandshake) {
+            clearConnectTimeout();
             state.connecting = false;
             state.connected = true;
             updateConnectionUI('connected');
@@ -578,6 +610,7 @@ function handleResponse(msg) {
         }
 
         if (isChatRequest) {
+            markConnectedFromLiveTraffic();
             const hasChatPayload = Boolean(
                 msg.payload
                 && (
@@ -604,6 +637,9 @@ function handleResponse(msg) {
             return;
         }
     } else {
+        const isHandshake = msg.id === 'handshake'
+            || msg.payload?.type === 'hello-ok'
+            || msg.payload?.type === 'connect-ok';
         const errorMessage = String(msg.error?.message || '').toLowerCase();
         const isVoiceStreamRequest = typeof msg.id === 'string' && msg.id.startsWith('vstream-');
         const isUnknownMethod = errorMessage.includes('unknown method') || errorMessage.includes('method not found');
@@ -629,6 +665,14 @@ function handleResponse(msg) {
 
             log.warn('Chat request failed:', msg.error?.code, msg.error?.message);
         } else {
+            if (isHandshake) {
+                clearConnectTimeout();
+                state.connecting = false;
+                state.connected = false;
+                updateConnectionUI('error', humanizeError(msg.error));
+                log.warn('Gateway handshake failed:', msg.error?.code, msg.error?.message);
+                return;
+            }
             if (isTransientDisconnect) {
                 log.debug('Ignoring transient disconnected RPC response:', msg.id || '(no id)', msg.error?.message);
                 return;
@@ -651,6 +695,9 @@ function handleResponse(msg) {
  * Handle official Gateway 'event' frames
  */
 function handleEvent(msg) {
+    if (msg.event === 'chat' || msg.event === 'agent') {
+        markConnectedFromLiveTraffic();
+    }
     if (msg.payload?.partialTranscript) {
         if (elements.voiceTranscriptInline) {
             elements.voiceTranscriptInline.textContent = msg.payload.partialTranscript;

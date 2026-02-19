@@ -65,6 +65,7 @@ export function registerWindowHandlers(ipc, secureStorage, windowManager, _debug
         return {
             name: app.getName(),
             version: app.getVersion(),
+            isPackaged: app.isPackaged,
             electron: process.versions.electron,
             chrome: process.versions.chrome,
             node: process.versions.node,

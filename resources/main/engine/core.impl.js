@@ -10,11 +10,13 @@ import WebSocket from 'ws';
 import os from 'os';
 import { spawn, exec, execFile, execSync, spawnSync } from 'child_process';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const WINDOWS_HIDE = process.platform === 'win32';
 const withWindowsHide = (options = {}) => (WINDOWS_HIDE ? { ...options, windowsHide: true } : options);
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 function listExecutablesInPath(fileNames = []) {
   const rawPath = process.env.PATH || process.env.Path || '';
   if (!rawPath) return [];
@@ -48,15 +50,17 @@ function findExecutableInPath(fileNames = []) {
   const matches = listExecutablesInPath(fileNames);
   return matches.length > 0 ? matches[0] : null;
 }
+function isSameExecutablePath(left, right) {
+  if (!left || !right) return false;
+  try {
+    return path.resolve(left).toLowerCase() === path.resolve(right).toLowerCase();
+  } catch {
+    return false;
+  }
+}
 function resolveNodeRuntime() {
   const execPath = process.execPath || '';
-  const execBase = path.basename(execPath).toLowerCase();
-  const looksLikeElectronBinary = execBase === 'electron.exe' || execBase === 'electron';
   const runningInsideElectron = Boolean(process.versions?.electron);
-
-  if (!runningInsideElectron || !looksLikeElectronBinary) {
-    return execPath || 'node';
-  }
 
   const envCandidates = [
     process.env.npm_node_execpath,
@@ -92,9 +96,24 @@ function resolveNodeRuntime() {
     }
   }
 
-  return 'node';
+  // In packaged Electron builds, fallback to the app binary and force Node mode.
+  if (runningInsideElectron && execPath) {
+    return execPath;
+  }
+
+  return execPath || 'node';
 }
 const NODE_RUNTIME = resolveNodeRuntime();
+const NODE_RUNTIME_USE_ELECTRON_NODE = Boolean(
+  process.versions?.electron && isSameExecutablePath(NODE_RUNTIME, process.execPath)
+);
+function buildNodeRuntimeEnv(baseEnv = {}) {
+  if (!NODE_RUNTIME_USE_ELECTRON_NODE) return baseEnv;
+  return {
+    ...baseEnv,
+    ELECTRON_RUN_AS_NODE: '1'
+  };
+}
 
 function resolveOpenClawEntryFromPackageDir(packageDir) {
   if (typeof packageDir !== 'string' || !packageDir.trim()) return null;
@@ -138,6 +157,27 @@ function resolveOpenClawEntryFromPackageDir(packageDir) {
     }
   }
 
+  return null;
+}
+function resolveBundledOpenClawEntry() {
+  const packageDirs = new Set();
+
+  try {
+    if (typeof process.resourcesPath === 'string' && process.resourcesPath.trim()) {
+      packageDirs.add(path.join(process.resourcesPath, 'engine'));
+      packageDirs.add(path.join(process.resourcesPath, 'resources', 'engine'));
+    }
+  } catch {
+    // ignore
+  }
+
+  // Dev workspace fallback: <repo>/resources/engine
+  packageDirs.add(path.resolve(MODULE_DIR, '../../engine'));
+
+  for (const packageDir of packageDirs) {
+    const entry = resolveOpenClawEntryFromPackageDir(packageDir);
+    if (entry) return entry;
+  }
   return null;
 }
 
@@ -332,6 +372,16 @@ class DramEngine {
     const now = Date.now();
     if (this.lastCliProbeOk === false && (now - this.lastCliProbeAt) < 10000) {
       return false;
+    }
+
+    const bundledEntry = resolveBundledOpenClawEntry();
+    if (bundledEntry) {
+      this.cliPath = bundledEntry;
+      this.useNodeSpawn = true;
+      this.lastCliProbeAt = now;
+      this.lastCliProbeOk = true;
+      console.log('[DramEngine] Using bundled OpenClaw entry:', bundledEntry);
+      return true;
     }
 
     const candidatePaths = new Set();
@@ -712,12 +762,12 @@ class DramEngine {
 
     // Platform-specific spawn options to hide terminal window
     const spawnOptions = {
-      env: {
+      env: buildNodeRuntimeEnv({
         ...process.env,
         OPENCLAW_CONFIG_PATH: this.configPath,
         // Prevent full process respawns on SIGUSR1 config reloads (Windows respawns can flash console windows).
         OPENCLAW_NO_RESPAWN: '1'
-      },
+      }),
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: false,
       shell: false
@@ -1025,7 +1075,15 @@ class DramEngine {
     let result;
     try {
       if (this.useNodeSpawn) {
-        result = await execFileAsync(NODE_RUNTIME, [this.cliPath, ...cliArgs], withWindowsHide({ timeout: 20000, shell: false }));
+        result = await execFileAsync(
+          NODE_RUNTIME,
+          [this.cliPath, ...cliArgs],
+          withWindowsHide({
+            timeout: 20000,
+            shell: false,
+            env: buildNodeRuntimeEnv({ ...process.env })
+          })
+        );
       } else if (process.platform === 'win32') {
         const command = [quoteForCmd(this.cliPath), ...cliArgs.map(quoteForCmd)].join(' ').trim();
         result = await execFileAsync(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', command], withWindowsHide({

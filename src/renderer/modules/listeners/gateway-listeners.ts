@@ -6,6 +6,7 @@ import { elements } from '../elements.js';
 import { connect } from '../socket.js';
 import { updateConnectionUI } from '../connection-ui.js';
 import { humanizeError } from '../errors.js';
+import { getOnboardingComplete } from '../onboarding-state.js';
 
 let connectionRetries = 0;
 let retryTimeoutId = null;
@@ -52,7 +53,7 @@ export function setupGatewayListeners(on) {
 
     const btnLaunch = document.getElementById('btn-launch-gateway');
     on(btnLaunch, 'click', async () => {
-        const onboardingComplete = await window.dram.storage.get('dram.onboardingComplete');
+        const onboardingComplete = await getOnboardingComplete();
         const wsPath = await window.dram.storage.get('settings.workspacePath');
 
         if (!onboardingComplete || !wsPath) {
@@ -101,9 +102,20 @@ export function handleConnectionStatus(status) {
     if (status === 'disconnected') {
         import('../usage-data.js').then(m => m.cancelPendingUsageRequests()).catch(() => { });
         state.connected = false;
-        // Main process handles gateway restarts/reconnects; keep renderer passive here.
-        updateConnectionUI('connecting');
-        clearPendingRetries();
+        if (connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            const delay = getRetryDelay();
+            console.log(`[Gateway] Disconnected; retrying in ${Math.round(delay)}ms (attempt ${connectionRetries}/${MAX_RETRIES})`);
+            updateConnectionUI('connecting');
+            clearPendingRetries();
+            retryTimeoutId = setTimeout(() => {
+                if (!isShuttingDown) {
+                    connect();
+                }
+            }, delay);
+        } else {
+            updateConnectionUI('disconnected');
+        }
     } else if (status === 'error') {
         import('../usage-data.js').then(m => m.cancelPendingUsageRequests()).catch(() => { });
         state.connected = false;

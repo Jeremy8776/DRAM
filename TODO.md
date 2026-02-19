@@ -35,8 +35,8 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
   - [ ] Preserve pending UI state cleanly after WS reconnect.
   - [ ] Avoid duplicate retries for one failed oversized send.
 - [ ] Update channel hardening:
-  - [ ] Add GitHub release/version listener to detect new app versions.
-  - [ ] Enable auto-update check on app launch (with safe defaults + user control).
+  - [x] Add GitHub release/version listener to detect new app versions.
+  - [x] Enable auto-update check on app launch (with safe defaults + user control).
   - [ ] Add rollback flow in Settings for failed/bad updates.
 - [ ] Plugin/Skill validation:
   - [ ] Add A/B testing harness for plugins and skills.
@@ -57,11 +57,11 @@ This list is prioritized for mission-critical readiness: secure-by-default behav
   - [ ] `lint`
   - [ ] `test`
   - [ ] build smoke
-- [ ] Installer coverage:
-  - [ ] Build and verify installer artifacts for each supported OS release:
-    - [ ] Windows installer/portable
-    - [ ] Linux AppImage + deb
-    - [ ] macOS dmg + zip
+- [x] Installer coverage:
+  - [x] Build and verify installer artifacts for each supported OS release:
+    - [x] Windows installer/portable
+    - [x] Linux AppImage + deb
+    - [x] macOS dmg + zip
 
 ## P2 - Architecture / Refactor (next session)
 

@@ -143,6 +143,12 @@ npm run build:linux
 npm run build:mac
 ```
 
+Expected installer outputs:
+
+- Windows: NSIS setup `.exe` + portable `.exe`
+- Linux: `.AppImage` + `.deb`
+- macOS: `.dmg` + `.zip`
+
 Build output is written to `dist/`.
 
 ## Configuration

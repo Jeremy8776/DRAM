@@ -90,6 +90,32 @@ export function registerBridgeHandlers(ipcMain, stateManager, windowManager, deb
 
       const dramEngine = getDramEngine(windowManager, debugLog);
       await dramEngine.initialize();
+      const wsReady = Boolean(dramEngine.ws && dramEngine.ws.readyState === 1);
+      const bridgeReady = wsReady && !dramEngine.configOnlyMode;
+
+      if (!bridgeReady) {
+        const reason = dramEngine.configOnlyMode
+          ? 'Gateway initialized in config-only mode (WebSocket auth/connect failed).'
+          : 'Gateway WebSocket is not ready after initialization.';
+        console.warn('[IPC Bridge] Gateway not ready for live chat:', reason);
+        debugLog('Bridge: Gateway not ready for live chat:', reason);
+
+        await stateManager.setTransient('engine.connected', false);
+        await stateManager.setTransient('engine.status', 'error');
+        await stateManager.setTransient('engine.lastError', reason);
+
+        safeSendToRenderer('socket:status', 'error');
+        safeSendToRenderer('socket:data', JSON.stringify({
+          type: 'res',
+          id: 'handshake',
+          ok: false,
+          error: {
+            code: 'GATEWAY_NOT_READY',
+            message: reason
+          }
+        }));
+        return;
+      }
 
       // Save gateway token to secure storage for renderer access
       if (dramEngine.embeddedGatewayToken) {
