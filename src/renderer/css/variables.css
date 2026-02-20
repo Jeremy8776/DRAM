@@ -1,10 +1,10 @@
 :root {
     /* Sophisticated Dark Mode Palette */
-    --bg-deep: #030304;
-    --bg-base: #060607;
-    --bg-surface: #0a0a0c;
-    --bg-elevated: #111114;
-    --bg-hover: #18181c;
+    --bg-deep: #000000;
+    --bg-base: #000000;
+    --bg-surface: #000000;
+    --bg-elevated: #000000;
+    --bg-hover: #000000;
 
     /* Deep Royal Purple - Premium & Deep */
     --accent: #7c3aed;

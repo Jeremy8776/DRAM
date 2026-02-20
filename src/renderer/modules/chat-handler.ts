@@ -4,34 +4,26 @@
  */
 import { state } from './state.js';
 import { elements } from './elements.js';
-import { addMessage, updateMessageElement, hideTypingIndicator, updateTypingStatus, updateTypingWorklog, renderMessage } from './renderer.js';
+import {
+    addMessage,
+    updateMessageElement,
+    hideTypingIndicator,
+    updateTypingStatus,
+    updateTypingWorklog,
+    renderMessage,
+    updateThinkingDrawer,
+    hideThinkingDrawer
+} from './renderer.js';
 import { calculateCost, addSystemMessage, translateGatewayError } from './utils.js';
 import { resetTtsBuffer, processTtsStreaming } from './tts-handler.js';
 import { extractCanvasPayloadFromMessage, buildCanvasPreviewMessage, maybeRenderAssistantCanvas } from './chat-canvas.js';
+import { resolveKnownSessionId, getAssistantProgressLabel, isLocalModelIdentifier } from './agent-utils.js';
 
 // Track which runId belongs to which sessionKey
 export const runToSession = new Map();
 // Track active runs to correlate events
 export const activeRuns = new Map();
 const MAX_ACTIVE_RUNS = 100;
-
-function resolveKnownSessionId(candidate) {
-    const raw = String(candidate || '').trim();
-    if (!raw) return null;
-
-    const options = new Set([raw]);
-    if (raw.includes(':')) {
-        const parts = raw.split(':').filter(Boolean);
-        if (parts.length > 0) options.add(parts[parts.length - 1]);
-        if (parts.length > 1) options.add(parts[1]);
-    }
-
-    for (const option of options) {
-        if (state.sessions.some((s) => s.id === option)) return option;
-    }
-
-    return null;
-}
 
 /**
  * Track an active chat run to correlate events.
@@ -102,43 +94,26 @@ function appendRunWorklog(runId, chunk, sessionId = null) {
 
 function clearRunTransientState(runId) {
     if (!runId) return;
+    const runSessionId = runToSession.get(runId);
     thinkingBuffer.delete(runId);
     worklogBuffer.delete(runId);
     worklogLastEntry.delete(runId);
     activeRuns.delete(runId);
     runToSession.delete(runId);
-}
-
-function getAssistantProgressLabel(rawType) {
-    const value = String(rawType || '').toLowerCase().trim();
-    if (!value) return null;
-    if (value === 'thinking') return 'analyzing your request';
-    if (value === 'tool_call') return 'preparing tool call';
-    if (value === 'tool_result') return 'processing tool output';
-    if (value === 'search') return 'searching references';
-    if (value === 'retrieve') return 'gathering context';
-    if (value === 'plan') return 'planning response';
-    if (value === 'draft') return 'drafting answer';
-    if (value === 'final') return null;
-    if (value === 'delta' || value === 'content' || value === 'token') return null;
-    return `agent phase: ${value}`;
-}
-
-function isLocalModelIdentifier(modelId, providerName) {
-    const provider = String(providerName || '').toLowerCase();
-    const model = String(modelId || '').toLowerCase();
-    if (provider === 'ollama' || provider === 'local' || provider === 'lmstudio' || provider === 'llamacpp' || provider === 'vllm') {
-        return true;
+    // Avoid hiding the drawer for completions from background sessions.
+    if (!runSessionId || isCurrentVisibleSession(runSessionId)) {
+        hideThinkingDrawer();
     }
-    if (!model) return false;
-    return model.startsWith('ollama/')
-        || model.startsWith('local/')
-        || model.includes('/local')
-        || model.includes('ollama')
-        || model.includes('lmstudio')
-        || model.includes('llama.cpp')
-        || model.includes('llamacpp')
-        || model.includes('vllm');
+}
+
+function getThinkingBuffer(runId) {
+    if (!runId) return '';
+    return thinkingBuffer.get(runId) || '';
+}
+
+function setThinkingBuffer(runId, text) {
+    if (!runId) return;
+    thinkingBuffer.set(runId, text);
 }
 
 /**
@@ -152,30 +127,32 @@ export function handleAgentEvent(payload) {
     const isCurrentTab = isCurrentVisibleSession(sessionId);
     const shouldRenderWorklog = isCurrentTab && !isVoiceModeActive();
 
-    if (runId) {
-        trackRun(runId, sessionId);
-    }
+    if (runId) trackRun(runId, sessionId);
 
     if (stream === 'assistant' && runId) {
         const data = payload?.data;
         let didUpdateThinking = false;
 
-        if (data?.type === 'thinking' && typeof data?.thinking === 'string') {
-            const currentThinking = thinkingBuffer.get(runId) || '';
-            const nextThinking = currentThinking + data.thinking;
-            thinkingBuffer.set(runId, nextThinking);
+        const updateBuffer = (chunk) => {
+            const current = getThinkingBuffer(runId);
+            const next = current + chunk;
+            setThinkingBuffer(runId, next);
+            if (isCurrentTab) {
+                console.log(`[DRAM] Thought chunk: ${chunk.length} bytes`);
+                updateThinkingDrawer('thinking', next);
+            }
             appendRunWorklog(runId, 'analyzing your request', sessionId);
             didUpdateThinking = true;
+        };
+
+        if (data?.type === 'thinking' && typeof data?.thinking === 'string') {
+            updateBuffer(data.thinking);
         }
 
         if (data?.content && Array.isArray(data.content)) {
             for (const block of data.content) {
                 if (block.type === 'thinking' && typeof block.thinking === 'string') {
-                    const currentThinking = thinkingBuffer.get(runId) || '';
-                    const nextThinking = currentThinking + block.thinking;
-                    thinkingBuffer.set(runId, nextThinking);
-                    appendRunWorklog(runId, 'analyzing your request', sessionId);
-                    didUpdateThinking = true;
+                    updateBuffer(block.thinking);
                 }
             }
         }
@@ -190,13 +167,33 @@ export function handleAgentEvent(payload) {
         const data = payload?.data || {};
         const toolName = data?.name || data?.tool || data?.toolName || payload?.name || 'tool';
         const toolState = data?.status || data?.phase || data?.state || 'running';
+        
         const command = data?.command || data?.input?.command || data?.args?.command || '';
+        const targetPath = data?.path || data?.input?.path || data?.args?.path || data?.input?.file_path || data?.file_path || '';
+        const url = data?.url || data?.input?.url || data?.args?.url || '';
+        const query = data?.query || data?.input?.query || data?.args?.query || '';
+
         const commandPreview = typeof command === 'string' && command.length > 140
             ? `${command.slice(0, 140)}...`
             : command;
-        const summary = command
-            ? `[tool:${toolName}] ${toolState}\n$ ${commandPreview}`
-            : `[tool:${toolName}] ${toolState}`;
+            
+        let summary = `[ACTION] ${toolName.toUpperCase()} (${toolState})`;
+        if (targetPath) summary += `\n  > target: ${targetPath}`;
+        if (url) summary += `\n  > url: ${url}`;
+        if (query) summary += `\n  > query: ${query}`;
+        if (command) summary += `\n  $ ${commandPreview}`;
+        
+        const currentThinking = getThinkingBuffer(runId);
+        // Ensure we don't duplicate logs if the engine sends multiple events for the same tool state
+        if (!currentThinking.includes(summary)) {
+            const nextThinking = currentThinking + (currentThinking ? '\n\n' : '') + summary;
+            setThinkingBuffer(runId, nextThinking);
+            if (isCurrentTab) {
+                console.log(`[DRAM] Action log: ${toolName}`);
+                updateThinkingDrawer('system activity', nextThinking);
+            }
+        }
+
         appendRunWorklog(runId, summary, sessionId);
     }
 
@@ -214,6 +211,16 @@ export function handleAgentEvent(payload) {
     if (stream === 'lifecycle' && payload?.data?.phase === 'start' && runId) {
         updateTypingStatus('working through response...', false);
         appendRunWorklog(runId, 'planning response', sessionId);
+        
+        // Initialize thinking buffer with start message for the drawer
+        const startMsg = 'Initializing DRAM logic sequence...';
+        setThinkingBuffer(runId, startMsg);
+        
+        if (isCurrentTab) {
+            console.log(`[DRAM] Run started: ${runId}`);
+            hideThinkingDrawer(true); // Force reset
+            updateThinkingDrawer('processing', startMsg);
+        }
     }
 
     if (stream === 'lifecycle' && payload?.data?.phase === 'error' && runId) {
@@ -239,20 +246,16 @@ export function handleChatEvent(payload, options = {}) {
     const extractTextContent = (value) => {
         if (typeof value === 'string') return value;
         if (Array.isArray(value)) {
-            return value
-                .map((item) => {
-                    if (typeof item === 'string') return item;
-                    if (item && typeof item === 'object') {
-                        if (typeof item.text === 'string') return item.text;
-                        if (typeof item.content === 'string') return item.content;
-                    }
-                    return '';
-                })
-                .join('');
+            return value.map((item) => {
+                if (typeof item === 'string') return item;
+                if (item && typeof item === 'object') {
+                    if (typeof item.text === 'string') return item.text;
+                    if (typeof item.content === 'string') return item.content;
+                }
+                return '';
+            }).join('');
         }
-        if (value && typeof value === 'object' && typeof value.text === 'string') {
-            return value.text;
-        }
+        if (value && typeof value === 'object' && typeof value.text === 'string') return value.text;
         return '';
     };
 
@@ -260,6 +263,10 @@ export function handleChatEvent(payload, options = {}) {
         extractTextContent(payload?.content)
         || extractTextContent(payload?.delta?.content)
         || extractTextContent(payload?.message?.content)
+    );
+    const thought = (
+        extractTextContent(payload?.thought)
+        || extractTextContent(payload?.delta?.thought)
     );
     const done = payload?.done || payload?.delta?.done;
     const runId = payload?.runId;
@@ -274,8 +281,16 @@ export function handleChatEvent(payload, options = {}) {
     const isCurrentTab = targetSession?.id === state.currentSessionId;
     const targetMessages = targetSession?.messages || [];
 
-    if (payload?.meta) {
-        import('./renderer.js').then(m => m.updateInfobar(payload.meta));
+    if (payload?.meta) import('./renderer.js').then(m => m.updateInfobar(payload.meta));
+
+    if (thought) {
+        const currentThinking = getThinkingBuffer(runId);
+        const nextThinking = currentThinking + thought;
+        setThinkingBuffer(runId, nextThinking);
+        if (isCurrentTab) {
+            console.log(`[DRAM] Thought (direct): ${thought.length} bytes`);
+            updateThinkingDrawer('thinking', nextThinking);
+        }
     }
 
     if (state_event === 'error' || errorMessage) {
@@ -285,8 +300,6 @@ export function handleChatEvent(payload, options = {}) {
         resetTtsBuffer();
         if (runId) clearRunTransientState(runId);
         if (onComplete) onComplete();
-
-        // Show as an assistant message with user-friendly translation
         const friendlyError = translateGatewayError(errorMessage || 'An unknown error occurred.');
         addMessage('assistant', friendlyError, false);
         return;
@@ -306,34 +319,30 @@ export function handleChatEvent(payload, options = {}) {
                 const canvasPayload = extractCanvasPayloadFromMessage(text);
                 const textForDisplay = canvasPayload ? (buildCanvasPreviewMessage(canvasPayload) || text) : text;
                 if (document.body.classList.contains('voice-active') && isCurrentTab) {
-                    const msg = {
-                        id: crypto.randomUUID(),
-                        role: 'assistant',
-                        content: textForDisplay,
-                        streaming: false
-                    };
+                    const msg = { id: crypto.randomUUID(), role: 'assistant', content: textForDisplay, streaming: false };
                     targetMessages.push(msg);
                     renderMessage(msg);
                     void processTtsStreaming(textForDisplay, true);
                 } else {
                     addMessage('assistant', textForDisplay, false);
-                    if (isCurrentTab) {
-                        import('./voice-mode.js').then(m => m.queueVoiceResponse(textForDisplay));
-                    }
+                    if (isCurrentTab) import('./voice-mode.js').then(m => m.queueVoiceResponse(textForDisplay));
                 }
-                if (runId) {
-                    maybeRenderAssistantCanvas(runId, text, isCurrentTab);
-                }
+                if (runId) maybeRenderAssistantCanvas(runId, text, isCurrentTab);
             }
         }
         return;
     }
 
     if (content) {
-        if (isCurrentTab && isVoiceModeActive()) {
-            import('./voice-mode.js').then(m => m.hideVoiceThinking?.());
+        // Only hide if the drawer ONLY contains the initial setup message.
+        // If tools have run or model has thought, keep it visible (collapsed).
+        const currentThinking = getThinkingBuffer(runId);
+        const INITIAL_MSG = 'Initializing DRAM logic sequence...';
+        if (!currentThinking || currentThinking === INITIAL_MSG) { 
+             hideThinkingDrawer();
         }
-
+        
+        if (isCurrentTab && isVoiceModeActive()) import('./voice-mode.js').then(m => m.hideVoiceThinking?.());
         if (runId && onComplete) onComplete();
 
         const lastMsg = targetMessages[targetMessages.length - 1];
@@ -344,21 +353,15 @@ export function handleChatEvent(payload, options = {}) {
             }
             if (nextChunk) {
                 lastMsg.content += nextChunk;
-                if (document.body.classList.contains('voice-active') && isCurrentTab) {
-                    void processTtsStreaming(nextChunk, false);
-                    updateMessageElement(lastMsg);
-                } else if (isCurrentTab) {
-                    updateMessageElement(lastMsg);
-                }
+                if (isCurrentTab) updateMessageElement(lastMsg);
+                if (document.body.classList.contains('voice-active') && isCurrentTab) void processTtsStreaming(nextChunk, false);
             }
         } else {
             const msg = { id: crypto.randomUUID(), role: 'assistant', content, streaming: true };
             targetMessages.push(msg);
             if (isCurrentTab) {
                 renderMessage(msg);
-                if (document.body.classList.contains('voice-active')) {
-                    void processTtsStreaming(content, false);
-                }
+                if (document.body.classList.contains('voice-active')) void processTtsStreaming(content, false);
             }
         }
     }
@@ -375,9 +378,7 @@ export function handleChatEvent(payload, options = {}) {
                 const canvasPayload = extractCanvasPayloadFromMessage(originalAssistantContent);
                 if (canvasPayload) {
                     const previewText = buildCanvasPreviewMessage(canvasPayload);
-                    if (previewText) {
-                        lastMsg.content = previewText;
-                    }
+                    if (previewText) lastMsg.content = previewText;
                 }
             }
             if (isCurrentTab) {
@@ -392,9 +393,7 @@ export function handleChatEvent(payload, options = {}) {
                 || extractTextContent(payload?.message?.content)
                 || '';
             const contentForCanvas = sourceContent || String(lastMsg.content || '');
-            if (contentForCanvas) {
-                maybeRenderAssistantCanvas(runId, contentForCanvas, isCurrentTab);
-            }
+            if (contentForCanvas) maybeRenderAssistantCanvas(runId, contentForCanvas, isCurrentTab);
         }
 
         if (runId) clearRunTransientState(runId);
@@ -406,7 +405,6 @@ export function handleChatEvent(payload, options = {}) {
             const gatewayCost = Number(usage.cost);
             const cost = !isNaN(gatewayCost) ? gatewayCost : calculateCost(model, usage.inputTokens || 0, usage.outputTokens || 0);
 
-            // Update specific target session tracking (tab-safe)
             if (targetSession) {
                 targetSession.sessionCost = (targetSession.sessionCost || 0) + cost;
                 targetSession.sessionInputTokens = (targetSession.sessionInputTokens || 0) + (usage.inputTokens || 0);
@@ -418,12 +416,7 @@ export function handleChatEvent(payload, options = {}) {
                     const providerRequests = { ...targetSession.localProviderRequests };
                     const existingProviderEntry = providerRequests[provider];
                     const providerUsage = (existingProviderEntry && typeof existingProviderEntry === 'object')
-                        ? { ...existingProviderEntry }
-                        : {
-                            requests: Number(existingProviderEntry || 0),
-                            inputTokens: 0,
-                            outputTokens: 0
-                        };
+                        ? { ...existingProviderEntry } : { requests: Number(existingProviderEntry || 0), inputTokens: 0, outputTokens: 0 };
                     providerUsage.requests += 1;
                     providerUsage.inputTokens += (usage.inputTokens || 0);
                     providerUsage.outputTokens += (usage.outputTokens || 0);
@@ -431,19 +424,11 @@ export function handleChatEvent(payload, options = {}) {
                     targetSession.localProviderRequests = providerRequests;
 
                     if (isLocalModelIdentifier(model, provider)) {
-                        const localModelKey = (typeof model === 'string' && model.trim())
-                            ? model.trim()
-                            : `${provider || 'local'}/local`;
+                        const localModelKey = (typeof model === 'string' && model.trim()) ? model.trim() : `${provider || 'local'}/local`;
                         const localModelUsage = { ...(targetSession.localModelUsage || {}) };
                         const existingLocalEntry = localModelUsage[localModelKey];
                         const localEntry = (existingLocalEntry && typeof existingLocalEntry === 'object')
-                            ? { ...existingLocalEntry }
-                            : {
-                                provider: provider || 'local',
-                                requests: 0,
-                                inputTokens: 0,
-                                outputTokens: 0
-                            };
+                            ? { ...existingLocalEntry } : { provider: provider || 'local', requests: 0, inputTokens: 0, outputTokens: 0 };
                         localEntry.provider = provider || localEntry.provider || 'local';
                         localEntry.requests += 1;
                         localEntry.inputTokens += (usage.inputTokens || 0);
@@ -453,20 +438,7 @@ export function handleChatEvent(payload, options = {}) {
                     }
                 });
             }
-
-            // Sync message cost display
-            if (isCurrentTab) {
-                import('./renderer.js').then(m => {
-                    m.updateMessageCost(lastMsg, { cost, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
-                });
-            }
+            if (isCurrentTab) import('./renderer.js').then(m => m.updateMessageCost(lastMsg, { cost, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens }));
         }
     }
 }
-
-
-
-
-
-
-

@@ -2,74 +2,53 @@
  * DRAM Desktop - Settings Plugins Styles
  */
 
-/* ===== Premium Neural Cards (Dieter Rams Minimalism) ===== */
-.plugin-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
-    gap: var(--space-4);
-}
-
+.plugin-grid,
 .plugin-grid.compact {
-    grid-template-columns: repeat(3, minmax(200px, 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: var(--space-3);
-}
-
-.plugin-grid.compact .plugin-card {
-    padding: var(--space-2);
-    gap: var(--space-2);
-}
-
-.plugin-grid.compact .plugin-name {
-    font-size: var(--text-xs);
-    letter-spacing: 0.04em;
-}
-
-.plugin-grid.compact .plugin-description {
-    margin: var(--space-1) 0;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-}
-
-.plugin-grid.compact .plugin-footer {
-    padding-top: var(--space-1);
-    margin-top: 0 !important;
-}
-
-.plugin-grid.compact .plugin-controls {
-    gap: var(--space-2);
-}
-
-.plugin-grid.compact .plugin-status {
-    padding: 1px 5px;
-    letter-spacing: 0.08em;
+    width: 100%;
 }
 
 .plugin-card {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    padding: var(--space-4);
+    background: #060606;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: var(--space-3);
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-    position: relative;
-    overflow: hidden;
+    gap: var(--space-2);
+    transition: border-color 0.2s ease, background 0.2s ease;
+    min-width: 0;
+    min-height: 168px;
+}
+
+.plugin-card:hover {
+    border-color: rgba(124, 58, 237, 0.35);
+    background: #0a0a0a;
 }
 
 .plugin-card.active {
-    background: var(--bg-hover);
-    border: 1px solid var(--accent);
+    border-color: rgba(124, 58, 237, 0.55);
+    background: #080808;
+}
+
+.plugin-card.degraded {
+    border-color: rgba(239, 68, 68, 0.45);
+    background: #080808;
+}
+
+.plugin-card.unsupported {
+    opacity: 0.66;
 }
 
 .plugin-card-header {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
     width: 100%;
+    min-width: 0;
 }
 
 .plugin-info {
@@ -79,54 +58,115 @@
 
 .plugin-name {
     font-weight: var(--font-weight-semibold);
-    font-size: var(--text-sm);
+    font-size: 11px;
     color: var(--text-primary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 2px;
+    letter-spacing: 0.07em;
 }
 
 .plugin-version {
+    margin-top: 2px;
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-size: 10px;
     color: var(--text-tertiary);
 }
 
 .plugin-description {
-    font-size: var(--text-xs);
+    font-size: 10px;
     color: var(--text-secondary);
-    line-height: var(--line-height-normal);
-    margin: var(--space-2) 0;
+    line-height: 1.45;
+    max-width: 72ch;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.plugin-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: auto;
+    width: auto;
+    max-width: 52%;
+}
+
+.plugin-controls .tactile-btn {
+    min-height: 24px;
+    font-size: 10px;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+
+.plugin-card-header .switch {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .plugin-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: var(--space-2);
     width: 100%;
     margin-top: auto;
-    padding-top: var(--space-2);
 }
 
 .plugin-status {
-    font-size: var(--text-xs);
+    font-size: 10px;
     font-weight: var(--font-weight-bold);
-    letter-spacing: 0.1em;
-    padding: 1px 6px;
-    border-radius: 2px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 999px;
     text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: transparent;
 }
 
 .plugin-status.enabled {
-    background: var(--accent-subtle);
+    background: rgba(124, 58, 237, 0.11);
     color: var(--accent);
-    border: 1px solid var(--accent);
+    border-color: rgba(124, 58, 237, 0.45);
 }
 
-.plugin-status.disabled {
-    background: var(--bg-base);
-    color: var(--text-tertiary);
-    border: 1px solid var(--border);
+.plugin-status.disabled,
+.plugin-status.missing {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.plugin-status.error {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--danger, #ef4444);
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.plugin-status.setup-progress {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--warning, #f59e0b);
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.plugin-trust-status {
+    font-size: 10px;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+}
+
+.plugin-trust-status.untrusted {
+    color: var(--warning, #f59e0b);
+}
+
+.plugin-trust-status.blocked {
+    color: var(--danger, #ef4444);
 }
 
 .plugin-config-btn.configured {
@@ -135,52 +175,100 @@
     background: rgba(76, 175, 80, 0.08);
 }
 
-.plugin-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-left: auto;
+.plugin-trust-btn.danger,
+.skill-trust-btn.danger {
+    border-color: var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
 }
 
-/* Ensure switch is visible */
-.plugin-card-header .switch {
-    display: inline-block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    margin-left: auto;
+.skill-card .plugin-description {
+    margin: 0;
 }
 
-/* ===== Missing/Unsupported Plugin Style ===== */
-.plugin-card.unsupported {
-    opacity: 0.7;
-    border-color: var(--border-subtle);
-    background: var(--bg-base);
-}
-
-.plugin-card.unsupported .plugin-name {
+.skill-subtitle {
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
     color: var(--text-tertiary);
 }
 
-.plugin-card.unsupported .plugin-status.missing {
-    background: transparent;
-    border: 1px solid var(--border-subtle);
-    color: var(--text-tertiary);
-}
-
-.plugin-card.unsupported .plugin-description {
-    color: var(--text-tertiary);
-}
-
-/* ===== Skill-specific styles ===== */
+.plugin-card.needs-setup,
 .plugin-card.ineligible {
-    opacity: 0.6;
-    border-color: var(--warning, #f59e0b);
+    opacity: 0.9;
+}
+
+.skill-requirements-detail {
+    margin-top: var(--space-1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .skill-requirements-note {
-    font-size: 0.7rem;
-    color: var(--warning, #f59e0b);
-    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.skill-setup-actions {
+    display: flex;
+    gap: var(--space-1);
+    align-items: center;
+}
+
+.skill-setup-cta {
+    align-self: flex-start;
+}
+
+.skill-advanced-toggle {
+    opacity: 0.86;
+}
+
+.skill-advanced-fixes {
+    margin-top: var(--space-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.skill-advanced-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+    padding: 6px 8px;
+}
+
+.skill-advanced-text {
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    flex: 1;
+}
+
+.skill-requirement-action {
+    white-space: nowrap;
+}
+
+.skill-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.skill-footer-right .tactile-btn {
+    font-size: 10px;
+    padding: 2px 6px;
+    min-height: 22px;
 }
 
 .skill-update {
@@ -188,23 +276,42 @@
 }
 
 .skill-update-btn {
-    font-size: 0.75rem;
-    color: var(--primary);
+    font-size: var(--text-xs);
+    color: var(--accent);
     background: none;
-    border: 1px solid var(--primary);
-    padding: 4px 12px;
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    padding: 4px 10px;
     border-radius: 4px;
     cursor: pointer;
 }
 
 .skill-update-btn:hover {
-    background: var(--primary);
-    color: var(--bg);
+    background: rgba(124, 58, 237, 0.15);
 }
 
-/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .plugin-grid,
+    .plugin-grid.compact {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .plugin-card-header,
+    .plugin-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .plugin-controls {
+        width: 100%;
+        justify-content: flex-start;
+        max-width: 100%;
+        margin-left: 0;
+    }
+}
+
 @media (max-width: 600px) {
-    .plugin-grid {
+    .plugin-grid,
+    .plugin-grid.compact {
         grid-template-columns: 1fr;
     }
 }

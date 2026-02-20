@@ -18,7 +18,7 @@ export function renderChannelsGrid(channels) {
             className: 'w-full'
         }) + `
             <div style="text-align: center; margin-top: 16px;">
-                <button id="btn-add-channel" class="tactile-btn primary">Browse Integrations</button>
+                <button id="btn-add-channel" class="tactile-btn primary">Manage Channels</button>
             </div>
         `;
     }
@@ -33,7 +33,7 @@ export function renderChannelsGrid(channels) {
         const isOffline = false;
 
         return `
-                    <div class="plugin-card premium-card ${isActive ? 'active' : ''}" data-channel-id="${escapeHtml(ch.id)}">
+                    <div class="plugin-card ${isActive ? 'active' : ''}" data-channel-id="${escapeHtml(ch.id)}">
                         <div class="plugin-card-header">
                             <div class="plugin-info">
                                 <div class="plugin-name">${escapeHtml(ch.name)}</div>

@@ -487,3 +487,16 @@
 .message-content a:hover {
     text-decoration: underline;
 }
+
+/* SVG Rendering */
+.chat-svg-container {
+    margin: 10px 0;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.chat-svg-container svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}

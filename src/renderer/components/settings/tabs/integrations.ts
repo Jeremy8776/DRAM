@@ -1,31 +1,17 @@
 /**
  * Integrations Settings Tab
- * Merges Plugins, Channels, and Devices into a single view.
+ * Focuses on plugin/extension lifecycle.
  */
 import { renderSection } from '../../../modules/ui-components.js';
 import { renderPluginsGrid } from './plugins.js';
-import { renderChannelsGrid } from './channels.js';
-import { renderDevicesGrid } from './devices.js';
 
-export function renderIntegrationsTab(plugins, channels, devices) {
+export function renderIntegrationsTab(plugins) {
     return `
         <div id="tab-integrations" class="settings-tab-content hidden">
             ${renderSection({
-        title: 'Neural Extensions',
-        subtitle: 'Manage system capabilities and plugins.',
+        title: 'Plugins',
+        subtitle: 'Manage external integrations and plugin lifecycle.',
         content: renderPluginsGrid(plugins)
-    })}
-            
-            ${renderSection({
-        title: 'Communication Channels',
-        subtitle: 'Active communication uplinks and messaging platforms.',
-        content: renderChannelsGrid(channels)
-    })}
-
-            ${renderSection({
-        title: 'Connected Devices',
-        subtitle: 'Authorized hardware nodes and remote interfaces.',
-        content: renderDevicesGrid(devices)
     })}
         </div>
     `;

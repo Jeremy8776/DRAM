@@ -21,23 +21,8 @@ export function renderHardwareTab() {
         <div id="tab-hardware" class="settings-tab-content hidden">
             ${renderSection({
         title: 'Interface Directives',
-        subtitle: 'Control how DRAM manifests on your system.',
+        subtitle: 'Control how DRAM behaves in the desktop shell.',
         content: uxContent
-    })}
-            ${renderSection({
-        title: 'Audio Hardware',
-        subtitle: 'Configure neural voice input sources.',
-        content: `
-                    <div class="setting-group-v">
-                        <label class="setting-label-sm">Microphone Input</label>
-                        <div class="select-wrapper">
-                            <select id="setting-audio-input" class="mono-select">
-                                <option value="">Default System Device</option>
-                            </select>
-                        </div>
-                        <p class="setting-desc">Select the specific input device for Voice Mode.</p>
-                    </div>
-                `
     })}
         </div>
     `;

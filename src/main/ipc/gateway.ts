@@ -6,6 +6,31 @@ import { validateGatewayUrl, validateString } from '../ipc-validation.js';
 
 export function registerGatewayHandlers(ipc, secureStorage, windowManager, debugLog) {
     const dramEngine = getDramEngine(windowManager, debugLog);
+    const engineRequest = async (method, params = {}, timeoutMs = 12000) => {
+        return await new Promise((resolve) => {
+            let settled = false;
+            const finish = (result) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                resolve(result);
+            };
+            const timer = setTimeout(() => {
+                finish({ ok: false, error: { message: `${method} timed out after ${timeoutMs}ms` } });
+            }, timeoutMs);
+
+            const req = { type: 'req', id: `${method}-${Date.now()}`, method, params };
+            try {
+                Promise.resolve(
+                    dramEngine.handleRequest(req as any, (ok: any, data: any, error: any) => finish({ ok, data, error }))
+                ).catch((err: any) => {
+                    finish({ ok: false, error: { message: err?.message || String(err || 'Unknown error') } });
+                });
+            } catch (err: any) {
+                finish({ ok: false, error: { message: err?.message || String(err || 'Unknown error') } });
+            }
+        });
+    };
     const ensureConfigIo = async () => {
         await dramEngine.initialize();
         const loadConfig = dramEngine.modules?.loadConfig;
@@ -21,12 +46,13 @@ export function registerGatewayHandlers(ipc, secureStorage, windowManager, debug
         if (typeof modelId !== 'string' || !modelId.trim()) return null;
         const trimmed = modelId.trim();
         if (trimmed.includes('/')) return trimmed;
-        if (trimmed.includes('claude')) return `anthropic/${trimmed}`;
-        if (trimmed.includes('gpt') || trimmed.includes('o1')) return `openai/${trimmed}`;
-        if (trimmed.includes('gemini')) return `google/${trimmed}`;
-        if (trimmed.includes('llama')) return `groq/${trimmed}`;
-        if (trimmed === 'ollama') return 'ollama/llama3';
-        return `unknown/${trimmed}`;
+        const lower = trimmed.toLowerCase();
+        if (lower.includes('claude') || lower.includes('anthropic')) return `anthropic/${trimmed}`;
+        if (lower.includes('gpt') || lower.includes('o1') || lower.includes('o3') || lower.includes('openai')) return `openai/${trimmed}`;
+        if (lower.includes('gemini') || lower.includes('google')) return `google/${trimmed}`;
+        if (lower.includes('groq')) return `groq/${trimmed}`;
+        if (lower === 'ollama' || lower.includes(':') || lower.includes('local')) return `ollama/${trimmed}`;
+        return trimmed;
     };
 
     /**
@@ -174,16 +200,19 @@ export function registerGatewayHandlers(ipc, secureStorage, windowManager, debug
      */
     ipc.handle('gateway:patchConfig', async (event, patch) => {
         try {
-            const getRes: any = await new Promise(resolve => {
-                dramEngine.handleRequest({ type: 'req', id: `pc-${Date.now()}`, method: 'config.get', params: {} }, (ok: any, data: any) => resolve({ ok, data }));
-            });
+            if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+                throw new Error('Invalid patch payload');
+            }
 
-            const result: any = await new Promise(resolve => {
-                dramEngine.handleRequest({
-                    type: 'req', id: `patch-${Date.now()}`, method: 'config.patch',
-                    params: { raw: JSON.stringify(patch), baseHash: getRes.data?.hash || 'new' }
-                }, (ok: any, data: any, error: any) => resolve({ ok, data, error }));
-            });
+            const getRes: any = await engineRequest('config.get', {}, 10000);
+            if (!getRes.ok) {
+                throw new Error(getRes.error?.message || 'Failed to read config');
+            }
+
+            const result: any = await engineRequest('config.patch', {
+                raw: JSON.stringify(patch),
+                baseHash: getRes.data?.hash || 'new'
+            }, 15000);
 
             if (!result.ok) throw new Error(result.error?.message || 'Patch failed');
             return true;

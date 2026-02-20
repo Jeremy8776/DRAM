@@ -58,6 +58,9 @@ export function setupApiKeyListeners() {
                 'setting-key-google': 'settings.apiKeyGoogle',
                 'setting-key-groq': 'settings.apiKeyGroq',
                 'setting-key-elevenlabs': 'settings.apiKeyElevenLabs',
+                'setting-key-brave': 'settings.apiKeyBrave',
+                'setting-key-perplexity': 'settings.apiKeyPerplexity',
+                'setting-key-ollama': 'settings.apiKeyOllama',
                 'setting-gateway-token-dash': 'gateway.token'
             };
             const storageKey = keyMap[id];
@@ -113,6 +116,15 @@ export function setupApiKeyListeners() {
                 input.classList.add('hidden');
                 dots.classList.remove('hidden');
                 showToast({ message: 'API Key Saved', type: 'success' });
+
+                if (id === 'setting-key-ollama') {
+                    try {
+                        const { refreshModelsUI } = await import('../settings.js');
+                        await refreshModelsUI({ force: true });
+                    } catch (err) {
+                        console.warn('Failed to refresh models after Ollama key save:', err);
+                    }
+                }
 
                 // Patch engine config for specific providers
                 if (id === 'setting-key-elevenlabs') {
@@ -209,7 +221,7 @@ export function setupClearCredsListener(on) {
             type: 'danger',
             title: 'Clear Secure Credentials',
             message: 'Are you sure you want to purge all API keys and Gateway tokens?',
-            detail: 'This will remove your Anthropic, OpenAI, Google, and Groq keys, as well as your Gateway authentication token.',
+            detail: 'This will remove your Anthropic, OpenAI, Google, Groq, ElevenLabs, Brave, Perplexity, and Ollama keys, as well as your Gateway authentication token.',
             confirmText: 'Clear All',
             cancelText: 'Cancel'
         });
@@ -222,6 +234,9 @@ export function setupClearCredsListener(on) {
                     'settings.apiKeyGoogle',
                     'settings.apiKeyGroq',
                     'settings.apiKeyElevenLabs',
+                    'settings.apiKeyBrave',
+                    'settings.apiKeyPerplexity',
+                    'settings.apiKeyOllama',
                     'gateway.token',
                     'gateway.password'
                 ];
@@ -244,6 +259,9 @@ export function setupClearCredsListener(on) {
                     'setting-key-google',
                     'setting-key-groq',
                     'setting-key-elevenlabs',
+                    'setting-key-brave',
+                    'setting-key-perplexity',
+                    'setting-key-ollama',
                     'setting-gateway-token-dash'
                 ];
                 ids.forEach(id => syncSecureKeyUI(id, ''));
@@ -280,18 +298,51 @@ export function setupOllamaTestListener() {
                 const result = await window.dram.util.testOllamaConnection(url);
 
                 if (result.ok) {
-                    const modelCount = result.models ? result.models.length : 0;
-                    resultsEl.textContent = `Success: Found ${modelCount} models`;
-                    resultsEl.className = 'setting-status-indicator success';
+                    const installedCount = Number(result.installedCount || 0);
+                    const compatibleCount = Number(result.compatibleCount || 0);
+                    const hasCompatible = compatibleCount > 0;
+                    resultsEl.textContent = hasCompatible
+                        ? `Connected: ${compatibleCount} compatible model(s) ready (${installedCount} installed)`
+                        : 'Connected, but no tool-capable models are currently available';
+                    resultsEl.className = `setting-status-indicator ${hasCompatible ? 'success' : 'warning'}`;
+
+                    await window.dram.storage.set('settings.ollamaHost', url);
 
                     showToast({
-                        message: `Ollama Connected: ${modelCount} models found`,
-                        type: 'success'
+                        message: hasCompatible
+                            ? `Ollama ready: ${compatibleCount} model(s) available`
+                            : 'Ollama reachable, but no compatible models are available',
+                        type: hasCompatible ? 'success' : 'warning'
                     });
+                    if (result.warning) {
+                        showToast({ message: String(result.warning), type: 'warning' });
+                    }
 
                     // Trigger a model UI refresh to populate the local selector
                     const { refreshModelsUI } = await import('../settings.js');
                     await refreshModelsUI({ force: true });
+
+                    const localSelect = document.getElementById('setting-model-local') as HTMLSelectElement | null;
+                    if (localSelect) {
+                        if (!localSelect.value) {
+                            const firstModelOption = Array.from(localSelect.options).find((option) => Boolean(option.value));
+                            if (firstModelOption) {
+                                localSelect.value = firstModelOption.value;
+                            }
+                        }
+
+                        if (localSelect.value) {
+                            const savedLocal = await window.dram.storage.get('settings.modelLocal');
+                            if (!savedLocal) {
+                                await window.dram.storage.set('settings.modelLocal', localSelect.value);
+                            }
+                        }
+
+                        const localModeEnabled = Boolean((document.getElementById('setting-primary-mode-local') as HTMLInputElement | null)?.checked);
+                        if (localModeEnabled && localSelect.value) {
+                            localSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
 
                 } else {
                     resultsEl.textContent = `Failed: ${result.error || 'Connection refused'}`;

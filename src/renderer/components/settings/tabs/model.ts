@@ -2,7 +2,8 @@
  * Model Settings Tab
  * Enhanced with clear thinking/reasoning differentiation
  */
-import { renderSelect, renderRange, renderSection, renderSwitch, renderInputWithAction } from '../../../modules/ui-components.js';
+import { state } from '../../../modules/state.js';
+import { renderRange, renderSection, renderSwitch, renderInputWithAction, renderSecureKey } from '../../../modules/ui-components.js';
 
 export function renderModelTab(cloudModelOptionsHtml, localModelOptionsHtml) {
     const processingContent = `
@@ -34,12 +35,21 @@ export function renderModelTab(cloudModelOptionsHtml, localModelOptionsHtml) {
             ${renderInputWithAction({
         id: 'setting-ollama-host',
         label: 'Ollama Endpoint',
-        description: 'Local server URL (e.g. http://127.0.0.1:11434).',
+        description: 'Connectivity check endpoint (normally http://127.0.0.1:11434).',
         placeholder: 'http://localhost:11434',
         actionId: 'btn-test-ollama',
         actionLabel: 'Test & Fetch'
     })}
+            ${renderSecureKey({
+        id: 'setting-key-ollama',
+        label: 'Ollama API Key',
+        description: 'Optional token for authenticated Ollama endpoints.',
+        placeholder: 'ollama-local'
+    })}
             <div id="ollama-test-results" class="setting-status-indicator" style="margin-top: 4px;"></div>
+            <div class="label-description" style="margin-top: 6px;">
+                DRAM only lists tool-capable Ollama models exposed by OpenClaw.
+            </div>
             
             <div class="settings-control" style="margin-top: 12px; border-bottom: none;">
                 <div class="control-label">
@@ -68,24 +78,12 @@ export function renderModelTab(cloudModelOptionsHtml, localModelOptionsHtml) {
     `;
 
     const contextContent = `
-        ${renderSelect({
-        id: 'setting-think',
-        label: 'Reasoning Depth',
-        description: 'Computational thinking iterations per query.',
-        options: [
-            { value: '1', text: 'Direct Response (Fastest - No thinking step)' },
-            { value: '2', text: 'Balanced (One thinking iteration)' },
-            { value: '3', text: 'Deep Analysis (Multiple thinking iterations, Slowest)' }
-        ],
-        value: '1'
-    })}
-        <div class="think-preview" id="think-preview">
-            <div class="think-preview-label">Output Preview:</div>
-            <div class="think-preview-content" id="think-preview-content">
-                Model responds immediately with answer
+        <div class="settings-control">
+            <div class="control-label">
+                <span class="label-text">Reasoning Control</span>
+                <span class="label-description">Moved to the chat footer next to the active model. DRAM auto-adjusts unsupported levels for the current model.</span>
             </div>
         </div>
-        <div id="think-change-status" class="setting-status-indicator"></div>
     `;
 
     return `
@@ -97,9 +95,9 @@ export function renderModelTab(cloudModelOptionsHtml, localModelOptionsHtml) {
     })}
             ${renderSection({
         title: 'Context Options',
-        subtitle: 'Fine-tune engine behavior and reasoning depth.',
+        subtitle: 'Fine-tune inference behavior and routing constraints.',
         content: contextContent,
-        infoTooltip: 'Reasoning Depth controls how many "thinking iterations" the model performs before responding. Higher values produce more thorough answers but increase response time.'
+        infoTooltip: 'Use the chat footer thinking control for per-message reasoning depth. DRAM adapts unsupported levels automatically per model.'
     })}
         </div>
     `;
@@ -108,18 +106,25 @@ export function renderModelTab(cloudModelOptionsHtml, localModelOptionsHtml) {
 /**
  * Update the thinking preview based on selected value
  */
-export function updateThinkingPreview() {
-    const thinkLevel = document.getElementById('setting-think')?.value || '1';
-    const previewContent = document.getElementById('think-preview-content');
-    if (!previewContent) return;
+export function updateThinkingPreview(modelId?: string) {
+    const thinkingSelect = (document.getElementById('chat-thinking-select') as HTMLSelectElement | null)
+        || (document.getElementById('setting-think') as HTMLSelectElement | null);
+    if (!thinkingSelect) return;
 
-    const descriptions = {
-        '1': 'Model responds immediately with answer (no visible thinking)',
-        '2': 'Model shows reasoning process, then provides final answer',
-        '3': 'Model performs deep analysis with multiple thinking steps before answering'
-    };
+    const activeModelId = String(modelId || state.currentActiveModelId || state.model || '').trim().toLowerCase();
+    const isGpt52Chat = activeModelId.includes('gpt-5.2-chat');
+    const lowOption = Array.from(thinkingSelect.options).find((option) => option.value === 'low');
+    const mediumOption = Array.from(thinkingSelect.options).find((option) => option.value === 'medium');
+    const highOption = Array.from(thinkingSelect.options).find((option) => option.value === 'high');
 
-    previewContent.textContent = descriptions[thinkLevel] || descriptions['1'];
+    if (lowOption) lowOption.disabled = isGpt52Chat;
+    if (highOption) highOption.disabled = isGpt52Chat;
+    if (mediumOption) mediumOption.disabled = false;
+
+    if (isGpt52Chat && thinkingSelect.value !== 'medium') {
+        thinkingSelect.value = 'medium';
+        void (window as any).dram?.storage?.set?.('settings.thinkLevel', 'medium');
+    }
 }
 
 /**

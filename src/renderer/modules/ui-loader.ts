@@ -23,27 +23,27 @@ function getFallbackModels() {
         { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai' },
         { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash', provider: 'google' },
         { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B', provider: 'groq' },
-        { id: 'ollama', name: 'Local (Ollama)', provider: 'ollama' }
+        { id: 'ollama/llama3:latest', name: 'Local llama3:latest', provider: 'ollama' }
     ];
 }
 
 function getFallbackPlugins() {
     return [
-        { id: 'slack', name: 'Slack', description: 'Send messages and interact with Slack workspaces', kind: 'plugin' },
-        { id: 'discord', name: 'Discord', description: 'Send messages to Discord channels', kind: 'plugin' },
-        { id: 'telegram', name: 'Telegram', description: 'Send messages via Telegram Bot API', kind: 'plugin' },
-        { id: 'email', name: 'Email', description: 'Send emails via SMTP', kind: 'plugin' },
-        { id: 'calendar', name: 'Calendar', description: 'Read and create calendar events', kind: 'plugin' },
-        { id: 'github', name: 'GitHub', description: 'Interact with GitHub repositories', kind: 'plugin' }
+        { id: 'slack', name: 'Slack', description: 'Slack workspace integration', kind: 'plugin', status: 'unavailable', controllable: false },
+        { id: 'discord', name: 'Discord', description: 'Discord bot integration', kind: 'plugin', status: 'unavailable', controllable: false },
+        { id: 'telegram', name: 'Telegram', description: 'Telegram bot integration', kind: 'plugin', status: 'unavailable', controllable: false },
+        { id: 'whatsapp', name: 'WhatsApp', description: 'WhatsApp via WhatsApp Web', kind: 'plugin', status: 'unavailable', controllable: false },
+        { id: 'signal', name: 'Signal', description: 'Signal messenger integration', kind: 'plugin', status: 'unavailable', controllable: false },
+        { id: 'voice-call', name: 'Voice Call', description: 'Voice call functionality', kind: 'plugin', status: 'unavailable', controllable: false }
     ];
 }
 
 function getFallbackSkills() {
     return [
-        { id: 'web-search', name: 'Web Search', description: 'Search the web for information', enabled: true },
-        { id: 'file-operations', name: 'File Operations', description: 'Read and write files', enabled: true },
-        { id: 'code-execution', name: 'Code Execution', description: 'Execute code in sandboxed environment', enabled: false },
-        { id: 'image-generation', name: 'Image Generation', description: 'Generate images using AI models', enabled: false }
+        { id: 'coding-agent', name: 'Coding Agent', description: 'Code editing and terminal workflows', enabled: false, eligible: false, requirements: ['Engine unavailable'] },
+        { id: 'summarize', name: 'Summarize', description: 'Summarize documents and web content', enabled: false, eligible: false, requirements: ['Engine unavailable'] },
+        { id: 'weather', name: 'Weather', description: 'Fetch weather forecasts and conditions', enabled: false, eligible: false, requirements: ['Engine unavailable'] },
+        { id: 'tmux', name: 'Tmux', description: 'Automate terminal sessions', enabled: false, eligible: false, requirements: ['Engine unavailable'] }
     ];
 }
 

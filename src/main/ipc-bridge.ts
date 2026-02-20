@@ -63,6 +63,30 @@ function normalizeError(err) {
   };
 }
 
+/**
+ * Backward-compat sanitizer for known payload shape mismatches.
+ * Older renderer builds may still send `chat.send` with `params.model`,
+ * which newer gateways reject. Strip it defensively in main.
+ * @param {SocketRequest} payload
+ * @param {(args: any[]) => void} debugLog
+ * @returns {SocketRequest}
+ */
+function sanitizeSocketRequest(payload, debugLog) {
+  if (!payload || typeof payload !== 'object') return payload;
+  if (payload.method !== 'chat.send') return payload;
+  if (!payload.params || typeof payload.params !== 'object' || Array.isArray(payload.params)) return payload;
+
+  if (Object.prototype.hasOwnProperty.call(payload.params, 'model')) {
+    const { model: _dropModel, ...rest } = payload.params;
+    debugLog('[IPC Bridge] Stripped legacy chat.send params.model before forwarding');
+    return {
+      ...payload,
+      params: rest
+    };
+  }
+  return payload;
+}
+
 export function registerBridgeHandlers(ipcMain, stateManager, windowManager, debugLog) {
   console.log('[IPC Bridge] Registering handlers...');
 
@@ -161,7 +185,7 @@ export function registerBridgeHandlers(ipcMain, stateManager, windowManager, deb
       }));
       return;
     }
-    const requestPayload = validation.value;
+    const requestPayload = sanitizeSocketRequest(validation.value, debugLog);
 
     const respond = (ok, data, error, _meta) => {
       try {

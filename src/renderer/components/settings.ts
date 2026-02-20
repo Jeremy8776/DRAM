@@ -1,7 +1,7 @@
 /**
  * DRAM Desktop - Settings Page Component (Modular)
  */
-import { renderModelOptions, escapeHtml } from './settings/utils.js';
+import { renderModelOptions, renderLocalModelOptions, escapeHtml } from './settings/utils.js';
 import { renderSkillsTab } from './settings/tabs/skills.js';
 import { renderIntegrationsTab } from './settings/tabs/integrations.js'; // Merged tab
 import { renderFallbacksTab } from './settings/tabs/fallbacks.js';
@@ -17,6 +17,7 @@ import { renderDaemonTab } from './settings/tabs/daemon.js';
 import { renderHardwareTab } from './settings/tabs/hardware.js';
 import { renderSecurityTab } from './settings/tabs/security.js';
 import { renderVoiceTab } from './settings/tabs/voice.js';
+import { renderConnectionsTab } from './settings/tabs/connections.js';
 
 export function renderSettingsPage({
     models = [],
@@ -32,6 +33,7 @@ export function renderSettingsPage({
     // Ensure we don't show skills in the plugins list as they are handled separately
     const filteredPlugins = plugins.filter(p => p.kind !== 'skill');
     const modelOptionsHtml = renderModelOptions(models);
+    const localModelOptionsHtml = renderLocalModelOptions(models);
 
     return `
     <div class="settings-shell">
@@ -39,6 +41,7 @@ export function renderSettingsPage({
             <div class="sidebar-label">General</div>
             <div class="dashboard-nav-item active" data-tab="tab-workspace">Workspace</div>
             <div class="dashboard-nav-item" data-tab="tab-hardware">Interface</div>
+            <div class="dashboard-nav-item" data-tab="tab-connections">Connections</div>
 
             <div class="sidebar-label">Intelligence</div>
             <div class="dashboard-nav-item" data-tab="tab-model">Models</div>
@@ -78,11 +81,12 @@ export function renderSettingsPage({
 
                 <div class="settings-content">
                     ${renderWorkspaceTab()}
-                    ${renderModelTab(modelOptionsHtml, modelOptionsHtml)}
+                    ${renderConnectionsTab(channels, devices)}
+                    ${renderModelTab(modelOptionsHtml, localModelOptionsHtml)}
                     ${renderFallbacksTab(models)}
                     ${renderVoiceTab()}
                     ${renderApiVaultTab()}
-                    ${renderIntegrationsTab(filteredPlugins, channels, devices)}
+                    ${renderIntegrationsTab(filteredPlugins)}
                     ${renderSkillsTab(skills)}
                     ${renderGatewayTab()}
                     ${renderDaemonTab()}

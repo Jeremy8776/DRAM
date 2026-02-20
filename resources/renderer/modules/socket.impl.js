@@ -221,6 +221,23 @@ function buildOutboundMessage(text) {
     return `${text}\n\n${DESKTOP_CANVAS_HINT}`;
 }
 
+function mapReasoningSettingToThinkingLevel(rawValue) {
+    const value = String(rawValue || '').trim().toLowerCase();
+    if (value === '1') return 'low';
+    if (value === '2') return 'medium';
+    if (value === '3') return 'high';
+    if (value === 'low' || value === 'off' || value === 'none' || value === 'false' || value === 'minimal') return 'low';
+    if (value === 'medium' || value === 'balanced' || value === 'normal') return 'medium';
+    if (value === 'high' || value === 'deep' || value === 'xhigh') return 'high';
+    return 'medium';
+}
+
+function resolveThinkingMetaForModel(modelId, rawReasoningSetting) {
+    const normalizedModel = String(modelId || '').trim().toLowerCase();
+    if (normalizedModel.includes('gpt-5.2-chat')) return 'medium';
+    return mapReasoningSettingToThinkingLevel(rawReasoningSetting);
+}
+
 function isRecord(value) {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -918,17 +935,16 @@ export async function sendMessage() {
     // Show typing indicator immediately
     const activeModelInfo = getActiveModelInfo();
     const activeModelName = activeModelInfo.name || state.models.primary.name || 'DRAM';
-    const manualModelId = state.modelRoutingMode === 'manual'
-        ? (activeModelInfo.id || state.currentActiveModelId || state.models.primary.id)
-        : null;
-
     currentRequestId = `send-${Date.now()}`;
     const idempotencyKey = `dram-${Date.now()}`;
+    const reasoningSetting = await window.dram.storage.get('settings.thinkLevel').catch(() => 'medium');
+    const activeModelId = activeModelInfo.id || state.currentActiveModelId || state.model || '';
+    const thinkingLevel = resolveThinkingMetaForModel(activeModelId, reasoningSetting);
     const requestParamsBase = {
         sessionKey: state.sessionKey,
-        model: manualModelId || undefined,
         message: outboundMessage,
-        idempotencyKey
+        idempotencyKey,
+        thinking: thinkingLevel
     };
     const fitResult = fitImageAttachmentsForTransport(currentRequestId, requestParamsBase, imageAttachments);
     if (!fitResult.fits) {
@@ -965,6 +981,12 @@ export async function sendMessage() {
     // Set timeout for this request
     setRequestTimeout(currentRequestId);
 
+    // Keep session-level thinking in sync with request-level thinking to avoid stale overrides.
+    sendGatewayRequest('sessions.patch', {
+        key: state.sessionKey,
+        thinkingLevel
+    }, 'sessions-patch-thinking');
+
     try {
         window.dram.socket.send({
             type: 'req',
@@ -972,10 +994,10 @@ export async function sendMessage() {
             method: 'chat.send',
             params: {
                 sessionKey: state.sessionKey,
-                model: manualModelId || undefined,
                 message: outboundMessage,
                 attachments: attachments.length > 0 ? attachments : undefined,
-                idempotencyKey
+                idempotencyKey,
+                thinking: thinkingLevel
             }
         });
     } catch (err) {

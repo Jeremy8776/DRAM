@@ -17,6 +17,8 @@ import {
     toCooldownSeconds
 } from './model-state-utils.js';
 
+const MANUAL_ROUTING_ENABLED = false;
+
 function canonicalizeModelId(rawModelId, gatewayModels = null) {
     const modelId = normalizeModelId(rawModelId);
     if (!modelId || modelId === 'none') return null;
@@ -155,6 +157,7 @@ export function getActiveModelInfo() {
 }
 
 export function setManualModelSelection(rawModelId) {
+    if (!MANUAL_ROUTING_ENABLED) return false;
     const modelId = canonicalizeModelId(rawModelId);
     const selectable = findMatchingModelId(getSelectableModelIds(), modelId);
     if (!selectable) return false;
@@ -170,6 +173,7 @@ export function setManualModelSelection(rawModelId) {
 }
 
 export function clearManualModelSelection() {
+    if (!MANUAL_ROUTING_ENABLED) return;
     state.modelRoutingMode = 'auto';
     state.manualModelId = null;
     refreshMainDisplay();
@@ -209,12 +213,14 @@ export function initRateLimitUI() {
         elements.ratePanelContent.addEventListener('click', (event) => {
             const autoButton = event.target.closest('#model-route-auto');
             if (autoButton) {
+                if (!MANUAL_ROUTING_ENABLED) return;
                 clearManualModelSelection();
                 return;
             }
 
             const routeButton = event.target.closest('.model-route-btn');
             if (!routeButton) return;
+            if (!MANUAL_ROUTING_ENABLED) return;
             const modelId = routeButton.dataset.modelId;
             if (!modelId) return;
             setManualModelSelection(modelId);
@@ -256,13 +262,16 @@ export function updateModelStats(metadata: any = {}) {
     const primaryIsAvailable = isModelAvailable(primaryStatus);
     const manualModelId = resolveManualModelId(gatewayModels);
 
-    if (state.modelRoutingMode === 'manual' && !manualModelId) {
+    if (!MANUAL_ROUTING_ENABLED) {
+        state.modelRoutingMode = 'auto';
+        state.manualModelId = null;
+    } else if (state.modelRoutingMode === 'manual' && !manualModelId) {
         state.modelRoutingMode = 'auto';
         state.manualModelId = null;
     }
 
     let nextActiveModelId = currentActiveModelId;
-    if (state.modelRoutingMode === 'manual' && manualModelId) {
+    if (MANUAL_ROUTING_ENABLED && state.modelRoutingMode === 'manual' && manualModelId) {
         nextActiveModelId = manualModelId;
         state.manualModelId = manualModelId;
         ensureModelEntry(nextActiveModelId);
@@ -346,7 +355,7 @@ export function refreshMainDisplay() {
 
     const details = getActiveModelDetailsUnsafe();
     const isFallbackActive = !details.isPrimary && details.id !== 'none';
-    const isManualRouting = state.modelRoutingMode === 'manual';
+    const isManualRouting = MANUAL_ROUTING_ENABLED && state.modelRoutingMode === 'manual';
     const fallbackBadge = isFallbackActive
         ? '<span style="color: var(--warning); font-size: 9px; margin-left: 4px;">[FB]</span>'
         : '';
@@ -379,6 +388,9 @@ export function refreshMainDisplay() {
     // Keep attachment affordance aligned with active model capability.
     void import('./model-capabilities.js')
         .then((m) => m.refreshAttachButtonCapabilityHint?.())
+        .catch(() => { });
+    void import('../components/settings/tabs/model.js')
+        .then((m) => m.updateThinkingPreview?.(details.id))
         .catch(() => { });
 }
 
@@ -414,8 +426,13 @@ export function renderRatePanel() {
         model.active = isSameModel(model.id, state.currentActiveModelId);
     });
 
-    const isManualRouting = state.modelRoutingMode === 'manual';
+    const isManualRouting = MANUAL_ROUTING_ENABLED && state.modelRoutingMode === 'manual';
     const manualTargetId = resolveManualModelId() || state.manualModelId;
+    const routeToggleMarkup = MANUAL_ROUTING_ENABLED
+        ? `<button id="model-route-auto" class="model-route-mode-btn" style="font-size: 10px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: ${isManualRouting ? 'var(--bg-base)' : 'var(--accent)20'}; color: ${isManualRouting ? 'var(--text-secondary)' : 'var(--accent)'};" ${isManualRouting ? '' : 'disabled'}>
+                    ${isManualRouting ? 'Switch to Auto' : 'Auto Routing'}
+                </button>`
+        : '';
 
     let html = `
         <div class="rate-panel-header" style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
@@ -423,9 +440,7 @@ export function renderRatePanel() {
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary);">
                     Model Status // ${rows.length > 1 ? `PRIMARY + ${rows.length - 1} FALLBACK${rows.length > 2 ? 'S' : ''}` : 'SINGLE'}
                 </div>
-                <button id="model-route-auto" class="model-route-mode-btn" style="font-size: 10px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: ${isManualRouting ? 'var(--bg-base)' : 'var(--accent)20'}; color: ${isManualRouting ? 'var(--text-secondary)' : 'var(--accent)'};" ${isManualRouting ? '' : 'disabled'}>
-                    ${isManualRouting ? 'Switch to Auto' : 'Auto Routing'}
-                </button>
+                ${routeToggleMarkup}
             </div>
         </div>
     `;
@@ -444,6 +459,9 @@ export function renderRatePanel() {
         const isManualTarget = isManualRouting && manualTargetId && isSameModel(model.id, manualTargetId);
         const routeButtonText = isManualTarget ? 'Pinned' : 'Use';
         const routeButtonDisabled = isManualTarget ? 'disabled' : '';
+        const routeButtonMarkup = MANUAL_ROUTING_ENABLED
+            ? `<button class="model-route-btn" data-model-id="${escapeHtml(model.id)}" style="font-size: 10px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: ${isManualTarget ? 'var(--accent)20' : 'transparent'}; color: ${isManualTarget ? 'var(--accent)' : 'var(--text-secondary)'};" ${routeButtonDisabled}>${routeButtonText}</button>`
+            : '';
 
         return `
             <div class="model-row" style="margin-bottom: 16px; padding: 12px; background: var(--bg-base); border-radius: 4px; ${model.active ? 'border: 1px solid var(--accent);' : ''}">
@@ -455,7 +473,7 @@ export function renderRatePanel() {
                     </div>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span class="model-row-limit ${statusClass}" style="font-size: 14px; font-weight: 600;">${escapeHtml(String(limit))}%</span>
-                        <button class="model-route-btn" data-model-id="${escapeHtml(model.id)}" style="font-size: 10px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: ${isManualTarget ? 'var(--accent)20' : 'transparent'}; color: ${isManualTarget ? 'var(--accent)' : 'var(--text-secondary)'};" ${routeButtonDisabled}>${routeButtonText}</button>
+                        ${routeButtonMarkup}
                     </div>
                 </div>
                 <div class="limit-bar-bg" style="background: var(--bg-surface); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 6px;">

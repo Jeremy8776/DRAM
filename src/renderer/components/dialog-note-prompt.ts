@@ -21,44 +21,45 @@ export function showNoteDialog({
 
         overlay.innerHTML = `
             <div class="dialog-box" style="
-                background: var(--bg-surface, #1a1a2e);
-                border: 1px solid var(--border, #333);
-                border-radius: 8px;
-                padding: 28px 32px;
+                background: var(--bg-elevated, #111114);
+                border: 1px solid color-mix(in srgb, var(--accent, #7c3aed) 45%, var(--border, #333));
+                border-radius: 6px;
+                padding: 22px 24px;
                 max-width: 520px;
                 width: 90%;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);
                 animation: dialogSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             ">
                 <div class="dialog-header" style="
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
+                    gap: 10px;
+                    margin-bottom: 12px;
                 ">
                     <div class="dialog-icon" style="
-                        width: 36px;
-                        height: 36px;
-                        border-radius: 50%;
-                        background: #3b82f620;
-                        border: 1px solid #3b82f640;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 4px;
+                        background: color-mix(in srgb, var(--accent, #7c3aed) 10%, transparent);
+                        border: 1px solid color-mix(in srgb, var(--accent, #7c3aed) 28%, transparent);
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         font-size: 12px;
-                        color: #3b82f6;
+                        color: var(--accent, #7c3aed);
+                        font-weight: 700;
                         letter-spacing: 0.08em;
                     ">INFO</div>
                     <h3 style="
                         margin: 0;
-                        font-size: 18px;
+                        font-size: 16px;
                         font-weight: 600;
                         color: var(--text-primary, #e0e0e0);
                         letter-spacing: 0.02em;
                     ">${escapeHtml(title)}</h3>
                 </div>
 
-                <div class="dialog-body" style="margin-bottom: 24px;">
+                <div class="dialog-body" style="margin-bottom: 18px;">
                     <p style="
                         margin: 0;
                         font-size: 13px;
@@ -70,21 +71,21 @@ export function showNoteDialog({
 
                 <div class="dialog-footer" style="
                     display: flex;
-                    gap: 12px;
+                    gap: 8px;
                     justify-content: flex-end;
                 ">
                     <button class="dialog-btn dialog-btn-confirm" style="
-                        padding: 10px 20px;
-                        border: none;
-                        background: #3b82f6;
+                        padding: 8px 14px;
+                        border: 1px solid color-mix(in srgb, var(--accent, #7c3aed) 60%, transparent);
+                        background: color-mix(in srgb, var(--accent, #7c3aed) 22%, var(--bg-elevated, #111114));
                         color: white;
-                        border-radius: 6px;
-                        font-size: 13px;
+                        border-radius: 4px;
+                        font-size: 12px;
                         font-weight: 500;
                         cursor: pointer;
                         transition: all 0.15s ease;
                         font-family: inherit;
-                        box-shadow: 0 2px 8px #3b82f640;
+                        box-shadow: none;
                     ">${escapeHtml(confirmText)}</button>
                 </div>
             </div>
@@ -144,25 +145,25 @@ export function showTextPrompt({
 
         overlay.innerHTML = `
             <div class="dialog-box" style="
-                background: var(--bg-surface, #1a1a2e);
-                border: 1px solid var(--border, #333);
-                border-radius: 8px;
-                padding: 28px 32px;
+                background: var(--bg-elevated, #111114);
+                border: 1px solid color-mix(in srgb, var(--accent, #7c3aed) 45%, var(--border, #333));
+                border-radius: 6px;
+                padding: 22px 24px;
                 max-width: 520px;
                 width: 90%;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);
                 animation: dialogSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             ">
                 <div class="dialog-header" style="
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
+                    gap: 10px;
+                    margin-bottom: 12px;
                 ">
                     <div class="dialog-icon" style="
-                        width: 36px;
-                        height: 36px;
-                        border-radius: 50%;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 4px;
                         background: #8b5cf620;
                         border: 1px solid #8b5cf640;
                         display: flex;
@@ -170,11 +171,12 @@ export function showTextPrompt({
                         justify-content: center;
                         font-size: 12px;
                         color: #8b5cf6;
+                        font-weight: 700;
                         letter-spacing: 0.08em;
                     ">ASK</div>
                     <h3 style="
                         margin: 0;
-                        font-size: 18px;
+                        font-size: 16px;
                         font-weight: 600;
                         color: var(--text-primary, #e0e0e0);
                         letter-spacing: 0.02em;
@@ -197,32 +199,32 @@ export function showTextPrompt({
 
                 <div class="dialog-footer" style="
                     display: flex;
-                    gap: 12px;
+                    gap: 8px;
                     justify-content: flex-end;
                 ">
                     <button class="dialog-btn dialog-btn-cancel" style="
-                        padding: 10px 20px;
+                        padding: 8px 14px;
                         border: 1px solid var(--border, #333);
                         background: transparent;
                         color: var(--text-secondary, #888);
-                        border-radius: 6px;
-                        font-size: 13px;
+                        border-radius: 4px;
+                        font-size: 12px;
                         cursor: pointer;
                         transition: all 0.15s ease;
                         font-family: inherit;
                     ">${escapeHtml(cancelText)}</button>
                     <button class="dialog-btn dialog-btn-confirm" style="
-                        padding: 10px 20px;
-                        border: none;
-                        background: #8b5cf6;
+                        padding: 8px 14px;
+                        border: 1px solid color-mix(in srgb, var(--accent, #7c3aed) 60%, transparent);
+                        background: color-mix(in srgb, var(--accent, #7c3aed) 22%, var(--bg-elevated, #111114));
                         color: white;
-                        border-radius: 6px;
-                        font-size: 13px;
+                        border-radius: 4px;
+                        font-size: 12px;
                         font-weight: 500;
                         cursor: pointer;
                         transition: all 0.15s ease;
                         font-family: inherit;
-                        box-shadow: 0 2px 8px #8b5cf640;
+                        box-shadow: none;
                     ">${escapeHtml(confirmText)}</button>
                 </div>
             </div>

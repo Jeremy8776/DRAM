@@ -33,6 +33,51 @@ export function setupUtilListeners(on) {
         }
     });
 
+    document.addEventListener('click', async (e) => {
+        const trustBtn = e.target.closest('.plugin-trust-btn');
+        if (!trustBtn) return;
+        if (trustBtn.closest('.wizard-modal')) return;
+
+        const pluginId = trustBtn.dataset.pluginId;
+        const nextTrust = String(trustBtn.dataset.nextTrust || '').trim().toLowerCase();
+        if (!pluginId || !nextTrust) return;
+
+        const actionLabel = nextTrust === 'blocked' ? 'block' : 'trust';
+        const confirmed = await showConfirmDialog({
+            type: nextTrust === 'blocked' ? 'warning' : 'info',
+            title: nextTrust === 'blocked' ? 'Block Plugin' : 'Trust Plugin',
+            message: `${nextTrust === 'blocked' ? 'Block' : 'Trust'} plugin "${pluginId}"?`,
+            detail: nextTrust === 'blocked'
+                ? 'Blocked plugins cannot be enabled until unblocked.'
+                : 'Trusted plugins can be enabled without additional confirmation.',
+            confirmText: actionLabel[0].toUpperCase() + actionLabel.slice(1),
+            cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
+
+        const originalText = trustBtn.textContent;
+        trustBtn.disabled = true;
+        trustBtn.textContent = 'Saving...';
+        try {
+            const result = await window.dram.util.setPluginTrust(pluginId, nextTrust);
+            if (!result?.ok) {
+                throw new Error(result?.error || 'Failed to update plugin trust');
+            }
+            const plugins = await window.dram.util.getPlugins();
+            if (Array.isArray(plugins)) {
+                const { updatePluginsList } = await import('../../components/settings/tabs/plugins.js');
+                await updatePluginsList(plugins);
+            }
+            showToast({ message: `Plugin "${pluginId}" is now ${nextTrust}`, type: 'success' });
+        } catch (err) {
+            console.error('Plugin trust update error:', err);
+            showToast({ message: humanizeError(err), type: 'error' });
+        } finally {
+            trustBtn.disabled = false;
+            trustBtn.textContent = originalText || 'Trust';
+        }
+    });
+
     // ===== Plugin Toggle Handlers =====
     document.addEventListener('change', async (e) => {
         if (e.target.classList.contains('plugin-toggle')) {
@@ -44,6 +89,37 @@ export function setupUtilListeners(on) {
             const enabled = e.target.checked;
             const card = e.target.closest('.plugin-card');
             const statusEl = card?.querySelector('.plugin-status');
+            const trustStatus = String(
+                e.target.dataset.trustStatus
+                || card?.dataset?.trustStatus
+                || 'trusted'
+            ).trim().toLowerCase();
+
+            if (enabled && trustStatus === 'blocked') {
+                e.target.checked = false;
+                showToast({ message: `Plugin "${pluginName}" is blocked`, type: 'error' });
+                return;
+            }
+
+            if (enabled && trustStatus === 'untrusted') {
+                const trustNow = await showConfirmDialog({
+                    type: 'warning',
+                    title: 'Untrusted Plugin',
+                    message: `Plugin "${pluginName}" is untrusted.`,
+                    detail: 'Trust this plugin before enabling it?',
+                    confirmText: 'Trust and Enable',
+                    cancelText: 'Cancel'
+                });
+                if (!trustNow) {
+                    e.target.checked = false;
+                    return;
+                }
+                const trustResult = await window.dram.util.setPluginTrust(pluginId, 'trusted');
+                if (!trustResult?.ok) {
+                    e.target.checked = false;
+                    throw new Error(trustResult?.error || 'Failed to trust plugin');
+                }
+            }
 
             // Optimistic UI Update
             if (card) card.classList.toggle('active', enabled);
@@ -113,7 +189,7 @@ export function setupUtilListeners(on) {
 
         const deviceId = btn.dataset.deviceId;
         const deviceName = btn.dataset.deviceName || deviceId;
-        const card = btn.closest('.plugin-card');
+        const card = btn.closest('.device-card, .plugin-card');
 
         try {
             if (btn.classList.contains('btn-approve')) {

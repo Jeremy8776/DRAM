@@ -2,7 +2,7 @@
  * DRAM Plugin Configuration Dialog
  * Handles plugin setup dialogs (token, multi-field, external, QR code)
  */
-import { showToast } from '../../components/dialog.js';
+import { showConfirmDialog, showToast } from '../../components/dialog.js';
 import { escapeHtml } from '../utils.js';
 import {
     buildActionButtons,
@@ -33,8 +33,8 @@ export async function promptPluginConfig(pluginId) {
         overlay.style.cssText = `
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
+            background: rgba(8, 6, 14, 0.62);
+            backdrop-filter: blur(3px);
             z-index: 10000;
             display: flex;
             align-items: center;
@@ -45,7 +45,7 @@ export async function promptPluginConfig(pluginId) {
         const actionButtons = buildActionButtons(req);
 
         overlay.innerHTML = `
-            <div class="modal" style="max-width: 500px; width: 90%; background: var(--bg-surface); border: 1px solid var(--border); padding: 24px; border-radius: 8px;">
+            <div class="modal" style="max-width: 500px; width: 90%; background: var(--bg-elevated, #111114); border: 1px solid color-mix(in srgb, var(--accent, #7c3aed) 45%, var(--border, #333)); padding: 22px 24px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);">
                 <h3 style="margin-top: 0; margin-bottom: 16px;">Configure ${escapeHtml(pluginId)}</h3>
                 ${contentHtml}
                 <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
@@ -277,7 +277,25 @@ function setupEventListeners(overlay, req, pluginId, close, lifecycle, state) {
             cliBtn.disabled = true;
             if (statusEl) statusEl.textContent = 'Launching setup...';
             try {
-                const result = await window.dram.shell.executeCLI(command);
+                const approved = await showConfirmDialog({
+                    title: 'Run Setup Command',
+                    message: `Run setup for ${pluginId}?`,
+                    detail: `Command: ${command}`,
+                    type: 'info',
+                    confirmText: 'Run',
+                    cancelText: 'Cancel'
+                });
+                if (!approved) {
+                    if (statusEl) statusEl.textContent = 'Setup cancelled.';
+                    showToast({ message: 'Setup cancelled', type: 'info' });
+                    return;
+                }
+
+                const result = await window.dram.shell.executeCLI(command, {
+                    keepOpen: true,
+                    usePowerShell: true,
+                    uiConfirmed: true
+                });
                 if (result?.ok) {
                     if (statusEl) statusEl.textContent = 'Setup command launched.';
                     showToast({ message: 'Setup command launched', type: 'success' });

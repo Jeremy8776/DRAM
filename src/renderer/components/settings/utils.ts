@@ -2,6 +2,40 @@
  * DRAM Settings - Utility Functions
  */
 
+const LOCAL_PROVIDER_IDS = new Set(['ollama', 'local', 'lmstudio', 'llamacpp', 'llama.cpp', 'vllm']);
+
+function normalizeProvider(rawProvider, rawModelId = '') {
+    const provider = String(rawProvider || '').trim().toLowerCase();
+    const modelId = String(rawModelId || '').trim().toLowerCase();
+    if (LOCAL_PROVIDER_IDS.has(provider)) return provider === 'llama.cpp' ? 'llamacpp' : provider;
+    if (modelId.startsWith('ollama/')) return 'ollama';
+    if (modelId.startsWith('local/')) return 'local';
+    if (modelId.startsWith('lmstudio/')) return 'lmstudio';
+    if (modelId.startsWith('llamacpp/') || modelId.startsWith('llama.cpp/')) return 'llamacpp';
+    if (modelId.startsWith('vllm/')) return 'vllm';
+    return provider || 'unknown';
+}
+
+function buildModelId(model) {
+    const rawId = String(model?.id || '').trim();
+    const provider = normalizeProvider(model?.provider, rawId);
+    if (!rawId) return '';
+    if (rawId.includes('/')) return rawId;
+    if (provider === 'unknown') return rawId;
+    return `${provider}/${rawId}`;
+}
+
+function isLocalModel(model) {
+    const provider = normalizeProvider(model?.provider, model?.id);
+    if (LOCAL_PROVIDER_IDS.has(provider)) return true;
+    const fullId = buildModelId(model).toLowerCase();
+    return fullId.startsWith('ollama/')
+        || fullId.startsWith('local/')
+        || fullId.startsWith('lmstudio/')
+        || fullId.startsWith('llamacpp/')
+        || fullId.startsWith('vllm/');
+}
+
 /**
  * Escape HTML special characters
  */
@@ -44,19 +78,19 @@ export function renderModelOptions(models) {
                 <option value="groq/llama-3.1-8b-instant">Llama 3.1 8B</option>
             </optgroup>
             <optgroup label="Local">
-                <option value="ollama/ollama">Local ollama-host</option>
+                <option value="ollama/llama3:latest">Local llama3:latest</option>
             </optgroup>
         `;
     }
 
     const grouped = {};
     models.forEach(m => {
-        const p = m.provider || 'unknown';
+        const p = normalizeProvider(m?.provider, m?.id);
         if (!grouped[p]) grouped[p] = [];
         grouped[p].push(m);
     });
 
-    const priority = ['anthropic', 'openai', 'google', 'groq', 'ollama'];
+    const priority = ['anthropic', 'openai', 'google', 'groq', 'ollama', 'local', 'lmstudio', 'llamacpp', 'vllm'];
     const providers = Object.keys(grouped).sort((a, b) => {
         const idxA = priority.indexOf(a);
         const idxB = priority.indexOf(b);
@@ -68,11 +102,14 @@ export function renderModelOptions(models) {
 
     let html = '';
     providers.forEach(p => {
-        const label = p === 'ollama' ? 'Local (Ollama)' : p.toUpperCase();
+        const label = LOCAL_PROVIDER_IDS.has(p)
+            ? `Local (${p === 'llamacpp' ? 'llama.cpp' : p})`
+            : p.toUpperCase();
         html += `<optgroup label="${escapeHtml(label)}">`;
         grouped[p].forEach(m => {
-            const fullId = m.id.includes('/') ? m.id : `${m.provider}/${m.id}`;
-            html += `<option value="${escapeHtml(fullId)}">${escapeHtml(m.name || m.id)}</option>`;
+            const fullId = buildModelId(m);
+            if (!fullId) return;
+            html += `<option value="${escapeHtml(fullId)}">${escapeHtml(m.name || m.id || fullId)}</option>`;
         });
         html += '</optgroup>';
     });
@@ -85,11 +122,11 @@ export function renderModelOptions(models) {
  */
 export function renderLocalModelOptions(models) {
     if (!models) return '<option value="">Searching for local models...</option>';
-    const localModels = models.filter(m => m.provider === 'ollama');
+    const localModels = models.filter((m) => isLocalModel(m));
     if (localModels.length === 0) return '<option value="">No local models found</option>';
 
     return localModels.map(m => `
-        <option value="${escapeHtml(m.id)}">${escapeHtml(m.name || m.id)}</option>
+        <option value="${escapeHtml(buildModelId(m))}">${escapeHtml(m.name || m.id || buildModelId(m))}</option>
     `).join('');
 }
 

@@ -12,7 +12,7 @@ export function renderPluginsGrid(plugins, configMap = {}) {
     if (!plugins || plugins.length === 0) {
         return renderEmptyState({
             id: 'plugin-empty',
-            icon: '∑',
+            icon: '*',
             title: 'Neural Matrix Isolated',
             description: 'External communication uplink modules are currently disconnected.'
         });
@@ -30,46 +30,82 @@ export function renderPluginsGrid(plugins, configMap = {}) {
     return `
         <div class="plugin-grid compact" id="plugin-registry">
             ${sortedPlugins.map(pl => {
-        const isEnabled = pl.enabled;
-        const isMissing = pl.status === 'missing';
-        const hasSetup = PLUGIN_SETUP_REQUIREMENTS && PLUGIN_SETUP_REQUIREMENTS[pl.id];
-        const installAction = PLUGIN_INSTALL_ACTIONS && PLUGIN_INSTALL_ACTIONS[pl.id];
-        const canInstall = isMissing && installAction;
-        const configured = hasSetup ? configMap[pl.id] === true : false;
-        // In embedded mode, plugins are available via IPC even without WebSocket
-        // Check if engine is actually initialized rather than just WebSocket state
-        const isOffline = false; // Plugins work via IPC bridge regardless of WebSocket
+                const status = String(pl.status || '').toLowerCase();
+                const isEnabled = pl.enabled === true;
+                const isMissing = status === 'missing';
+                const isError = status === 'error';
+                const isUnavailable = status === 'unavailable';
+                const hasSetup = PLUGIN_SETUP_REQUIREMENTS && PLUGIN_SETUP_REQUIREMENTS[pl.id];
+                const installAction = PLUGIN_INSTALL_ACTIONS && PLUGIN_INSTALL_ACTIONS[pl.id];
+                const canInstall = isMissing && installAction;
+                const canRepair = isError && pl.repairable === true;
+                const configured = hasSetup ? configMap[pl.id] === true : false;
+                const canControl = pl.controllable !== false;
+                const trustStatus = String(pl.trustStatus || 'trusted').toLowerCase();
+                const isBlocked = trustStatus === 'blocked';
+                // In embedded mode, plugins are available via IPC even without WebSocket
+                // Check if engine is actually initialized rather than just WebSocket state
+                const isOffline = false; // Plugins work via IPC bridge regardless of WebSocket
+                const toggleDisabled = isOffline || !canControl || isMissing || isUnavailable || (isError && !isEnabled) || isBlocked;
+                const statusClass = isError
+                    ? 'error'
+                    : ((isMissing || isUnavailable) ? 'missing' : (isEnabled ? 'enabled' : 'disabled'));
+                const statusLabel = isError
+                    ? 'ERROR'
+                    : ((isMissing || isUnavailable) ? 'UNAVAILABLE' : (isEnabled ? 'ENABLED' : 'DISABLED'));
+                const trustLabel = trustStatus === 'blocked'
+                    ? 'BLOCKED'
+                    : (trustStatus === 'untrusted' ? 'UNTRUSTED' : 'TRUSTED');
+                const trustButtonLabel = trustStatus === 'blocked'
+                    ? 'Unblock'
+                    : (trustStatus === 'untrusted' ? 'Trust' : 'Block');
+                const nextTrustStatus = trustStatus === 'blocked'
+                    ? 'trusted'
+                    : (trustStatus === 'untrusted' ? 'trusted' : 'blocked');
+                const issueText = isError
+                    ? (pl.loadError || 'Plugin failed to load in the current OpenClaw runtime')
+                    : (!canControl && !isMissing && !isUnavailable ? 'Plugin cannot be controlled in the current runtime state' : '');
 
-        return `
-                    <div class="plugin-card premium-card ${isEnabled ? 'active' : ''} ${isMissing ? 'unsupported' : ''} ${isOffline ? 'engine-offline' : ''}" data-plugin-id="${escapeHtml(pl.id)}">
+                return `
+                    <div class="plugin-card ${isEnabled ? 'active' : ''} ${(isMissing || isUnavailable) ? 'unsupported' : ''} ${isError ? 'degraded' : ''} ${isOffline ? 'engine-offline' : ''}" data-plugin-id="${escapeHtml(pl.id)}" data-trust-status="${escapeHtml(trustStatus)}">
                         <div class="plugin-card-header">
                             <div class="plugin-info">
                                 <div class="plugin-name">${escapeHtml(pl.name)}</div>
                                 <div class="plugin-version">${escapeHtml(pl.version || '1.0.0')}</div>
                             </div>
-                                <div class="plugin-controls">
+                            <div class="plugin-controls">
                                 ${canInstall
-                ? `<button class="tactile-btn sm secondary plugin-install-btn" data-plugin-id="${escapeHtml(pl.id)}" data-install-command="${escapeHtml(installAction.command || '')}">Install</button>`
-                : ''}
-                                ${hasSetup && !isMissing ?
-                `<button class="tactile-btn sm secondary plugin-config-btn ${configured ? 'configured' : ''}" data-plugin-id="${escapeHtml(pl.id)}" ${isOffline ? 'disabled' : ''} title="${configured ? 'Configured — click to reconfigure' : 'Configure this plugin'}">${configured ? 'Configured' : 'Configure'}</button>`
-                : ''}
+                                    ? `<button class="tactile-btn sm secondary plugin-install-btn" data-plugin-id="${escapeHtml(pl.id)}" data-install-command="${escapeHtml(installAction.command || '')}">Install</button>`
+                                    : ''}
+                                ${canRepair
+                                    ? `<button class="tactile-btn sm secondary plugin-repair-btn" data-plugin-id="${escapeHtml(pl.id)}" title="${escapeHtml(pl.repairReason || 'Attempt automatic repair')}">Repair</button>`
+                                    : ''}
+                                ${hasSetup && !isMissing && !isUnavailable
+                                    ? `<button class="tactile-btn sm secondary plugin-config-btn ${configured ? 'configured' : ''}" data-plugin-id="${escapeHtml(pl.id)}" ${isOffline ? 'disabled' : ''} title="${configured ? 'Configured - click to reconfigure' : 'Configure this plugin'}">${configured ? 'Configured' : 'Configure'}</button>`
+                                    : ''}
+                                <button
+                                    class="tactile-btn sm secondary plugin-trust-btn ${trustStatus === 'blocked' ? 'danger' : ''}"
+                                    data-plugin-id="${escapeHtml(pl.id)}"
+                                    data-next-trust="${escapeHtml(nextTrustStatus)}"
+                                    ${isOffline ? 'disabled' : ''}>${escapeHtml(trustButtonLabel)}</button>
                                 <label class="switch sm">
-                                    <input type="checkbox" class="plugin-toggle" data-plugin-id="${escapeHtml(pl.id)}" ${isEnabled ? 'checked' : ''} ${isOffline || isMissing ? 'disabled' : ''}>
+                                    <input type="checkbox" class="plugin-toggle" data-plugin-id="${escapeHtml(pl.id)}" data-trust-status="${escapeHtml(trustStatus)}" ${isEnabled ? 'checked' : ''} ${toggleDisabled ? 'disabled' : ''}>
                                     <span class="slider"></span>
                                 </label>
                             </div>
                         </div>
                         <div class="plugin-description">${escapeHtml(pl.description || 'Neural interface extension.')}</div>
+                        ${issueText ? `<div class="plugin-description">${escapeHtml(issueText)}</div>` : ''}
                         <div class="plugin-footer">
-                            <div class="plugin-status ${isEnabled ? 'enabled' : (isMissing ? 'missing' : 'disabled')}">
-                                ${isMissing ? 'UNSUPPORTED' : (isEnabled ? 'ENABLED' : 'DISABLED')}
+                            <div class="plugin-status ${statusClass}">
+                                ${statusLabel}
                                 ${isOffline ? ' <span class="offline-hint">(OFFLINE)</span>' : ''}
                             </div>
+                            <div class="plugin-trust-status ${escapeHtml(trustStatus)}">${escapeHtml(trustLabel)}</div>
                         </div>
                     </div>
                 `;
-    }).join('')}
+            }).join('')}
         </div>
     `;
 }
@@ -81,10 +117,10 @@ export function renderPluginsTab(plugins) {
     return `
         <div id="tab-plugins" class="settings-tab-content hidden">
             ${renderSection({
-        title: 'Neural Integrations',
-        subtitle: 'Synergize DRAM with external communication networks.',
-        content: renderPluginsGrid(plugins)
-    })}
+                title: 'Neural Integrations',
+                subtitle: 'Synergize DRAM with external communication networks.',
+                content: renderPluginsGrid(plugins)
+            })}
         </div>
     `;
 }
@@ -138,7 +174,7 @@ async function buildPluginConfigMap(plugins) {
 
     for (const pl of plugins) {
         const req = PLUGIN_SETUP_REQUIREMENTS && PLUGIN_SETUP_REQUIREMENTS[pl.id];
-        if (!req || pl.status === 'missing') continue;
+        if (!req || pl.status === 'missing' || pl.status === 'unavailable') continue;
 
         const flag = getFlag(pl.id);
         if (flag === true) {
@@ -195,7 +231,3 @@ async function buildPluginConfigMap(plugins) {
 
     return configMap;
 }
-
-
-
-

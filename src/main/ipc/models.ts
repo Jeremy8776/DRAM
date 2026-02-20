@@ -11,7 +11,7 @@ const FALLBACK_MODELS = [
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai' },
     { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash', provider: 'google' },
     { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B', provider: 'groq' },
-    { id: 'ollama', name: 'Local (Ollama)', provider: 'ollama' }
+    { id: 'ollama/llama3:latest', name: 'Local llama3:latest', provider: 'ollama' }
 ];
 
 const MODEL_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -30,11 +30,11 @@ const inferProvider = (modelId) => {
     if (typeof modelId !== 'string') return 'unknown';
     const id = modelId.toLowerCase();
     if (id.includes('/')) return id.split('/')[0];
-    if (id.includes('claude')) return 'anthropic';
-    if (id.includes('gpt') || id.includes('o1')) return 'openai';
-    if (id.includes('gemini')) return 'google';
-    if (id.includes('llama') || id.includes('groq')) return 'groq';
-    if (id.includes('ollama')) return 'ollama';
+    if (id.includes('claude') || id.includes('anthropic')) return 'anthropic';
+    if (id.includes('gpt') || id.includes('o1') || id.includes('o3') || id.includes('openai')) return 'openai';
+    if (id.includes('gemini') || id.includes('google')) return 'google';
+    if (id.includes('groq')) return 'groq';
+    if (id.includes('ollama') || id.includes(':')) return 'ollama';
     return 'unknown';
 };
 
@@ -44,7 +44,8 @@ const normalizeGatewayModels = (rawModels) => {
     return rawModels
         .map((entry) => {
             if (!entry || typeof entry !== 'object') return null;
-            const provider = entry.provider || inferProvider(entry.id || entry.model || entry.key || '');
+            const provider = entry.provider
+                || (entry.local === true ? 'ollama' : inferProvider(entry.id || entry.model || entry.key || ''));
             const rawId = entry.id || entry.model || entry.key || entry.name;
             if (!rawId || typeof rawId !== 'string') return null;
             const id = rawId.includes('/') || !provider || provider === 'unknown'

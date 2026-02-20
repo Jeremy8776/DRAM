@@ -57,7 +57,11 @@ export async function loadUserSettings() {
             const display = document.getElementById('setting-temp-value');
             if (display) display.textContent = tempVal;
         }
-        if (elements.settingThink) elements.settingThink.value = getSetting('settings.thinkLevel') || '1';
+        if (elements.settingThink) {
+            const thinkingLevel = normalizeThinkingLevel(getSetting('settings.thinkLevel'));
+            elements.settingThink.value = thinkingLevel;
+            await window.dram.storage.set('settings.thinkLevel', thinkingLevel);
+        }
 
         // Sync API Keys via new helper
         syncSecureKeyUI('setting-key-anthropic', getSetting('settings.apiKeyAnthropic'));
@@ -65,8 +69,20 @@ export async function loadUserSettings() {
         syncSecureKeyUI('setting-key-google', getSetting('settings.apiKeyGoogle'));
         syncSecureKeyUI('setting-key-groq', getSetting('settings.apiKeyGroq'));
         syncSecureKeyUI('setting-key-elevenlabs', getSetting('settings.apiKeyElevenLabs'));
+        syncSecureKeyUI('setting-key-brave', getSetting('settings.apiKeyBrave'));
+        syncSecureKeyUI('setting-key-perplexity', getSetting('settings.apiKeyPerplexity'));
+        syncSecureKeyUI('setting-key-ollama', getSetting('settings.apiKeyOllama'));
 
         if (elements.settingOllamaHost) elements.settingOllamaHost.value = getSetting('settings.ollamaHost') || 'http://localhost:11434';
+        const internetAccessSelect = document.getElementById('setting-internet-access-mode') as HTMLSelectElement | null;
+        if (internetAccessSelect) {
+            const desiredMode = resolveInternetAccessMode(
+                getSetting('settings.internetAccessMode'),
+                Boolean(getSetting('settings.primaryModeLocal')),
+                getSetting('settings.webTools')
+            );
+            internetAccessSelect.value = desiredMode;
+        }
 
         if (elements.settingWebTools) elements.settingWebTools.checked = getSetting('settings.webTools') || false;
         if (elements.settingWebHeadless) elements.settingWebHeadless.checked = getSetting('settings.webHeadless') !== false;
@@ -80,7 +96,13 @@ export async function loadUserSettings() {
         if (elements.settingTray) elements.settingTray.checked = getSetting('settings.minimizeToTray') || false;
         if (elements.settingAdvancedMode) elements.settingAdvancedMode.checked = getSetting('settings.advancedMode') || false;
         if (elements.settingHaptics) elements.settingHaptics.checked = getSetting('settings.haptics') || false;
-        if (elements.settingDmPolicy) elements.settingDmPolicy.value = getSetting('settings.dmPolicy') || 'pairing';
+        if (elements.settingDmPolicy) elements.settingDmPolicy.value = getSetting('settings.dmPolicy') || 'open';
+        const settingWebSearchProvider = document.getElementById('setting-web-search-provider') as HTMLSelectElement | null;
+        if (settingWebSearchProvider) settingWebSearchProvider.value = getSetting('settings.webSearchProvider') || 'brave';
+        const settingWhatsappOutboundEnabled = document.getElementById('setting-whatsapp-outbound-enabled') as HTMLInputElement | null;
+        if (settingWhatsappOutboundEnabled) settingWhatsappOutboundEnabled.checked = getSetting('settings.whatsappOutboundEnabled') === true;
+        const settingDeviceAccessPolicy = document.getElementById('setting-device-access-policy') as HTMLSelectElement | null;
+        if (settingDeviceAccessPolicy) settingDeviceAccessPolicy.value = getSetting('settings.deviceAccessPolicy') || 'manual';
 
         if (elements.encryptionStatus) {
             elements.encryptionStatus.textContent = isEncrypted ? 'SECURE: OS Keychain Active' : 'STANDARD: Session Storage';
@@ -93,6 +115,9 @@ export async function loadUserSettings() {
 
         // Load fallback chain from engine config
         await loadFallbackChainIntoUI();
+
+        const { updateThinkingPreview } = await import('../components/settings/tabs/model.js');
+        updateThinkingPreview(state.currentActiveModelId);
     } catch (err) {
         console.error('Failed to load user settings:', err);
     }
@@ -103,6 +128,49 @@ export async function loadUserSettings() {
  */
 export async function loadFallbacksIntoUI() {
     await loadFallbackChainIntoUI();
+}
+
+const LOCAL_MODEL_PREFIXES = ['ollama/', 'local/', 'lmstudio/', 'llamacpp/', 'vllm/'];
+const INTERNET_ACCESS_MODES = new Set(['open', 'limited', 'offline']);
+
+function normalizeThinkingLevel(rawValue: unknown) {
+    const value = String(rawValue || '').trim().toLowerCase();
+    if (value === 'low' || value === '1' || value === 'off' || value === 'minimal' || value === 'none') return 'low';
+    if (value === 'high' || value === '3' || value === 'deep' || value === 'xhigh') return 'high';
+    return 'medium';
+}
+
+function isLocalModelId(rawId: string) {
+    const id = String(rawId || '').trim().toLowerCase();
+    if (!id) return false;
+    return LOCAL_MODEL_PREFIXES.some((prefix) => id.startsWith(prefix));
+}
+
+function resolveInternetAccessMode(rawMode: string, primaryModeLocal: boolean, webToolsSetting: unknown) {
+    const normalized = String(rawMode || '').trim().toLowerCase();
+    if (INTERNET_ACCESS_MODES.has(normalized)) return normalized;
+    if (primaryModeLocal) return 'offline';
+    if (typeof webToolsSetting === 'boolean') return webToolsSetting ? 'open' : 'limited';
+    return 'open';
+}
+
+function resolveSelectValue(selectEl: HTMLSelectElement, desiredValue: string) {
+    const desired = String(desiredValue || '').trim();
+    if (!desired) return '';
+
+    selectEl.value = desired;
+    if (selectEl.value === desired) return desired;
+
+    const desiredLower = desired.toLowerCase();
+    const match = Array.from(selectEl.options).find((option) => {
+        const value = String(option.value || '').trim();
+        if (!value) return false;
+        const lower = value.toLowerCase();
+        return lower === desiredLower
+            || lower.endsWith(`/${desiredLower}`)
+            || desiredLower.endsWith(`/${lower}`);
+    });
+    return match?.value || '';
 }
 
 /**
@@ -143,8 +211,9 @@ async function loadFallbackChainIntoUI() {
 export async function refreshModelsUI({ force = false, savedModel }: { force?: boolean; savedModel?: string } = {}) {
     try {
         if (!window.dram?.util?.getModels) return null;
-        const models = await window.dram.util.getModels({ force });
-        if (!models || models.length === 0) return null;
+        const upstream = await window.dram.util.getModels({ force });
+        const models = Array.isArray(upstream) ? [...upstream] : [];
+        if (models.length === 0) return null;
 
         const modelOptionsHtml = renderModelOptions(models);
         const localOptionsHtml = renderLocalModelOptions(models);
@@ -159,11 +228,11 @@ export async function refreshModelsUI({ force = false, savedModel }: { force?: b
             }
 
             settingModel.innerHTML = modelOptionsHtml;
-            if (desired) {
-                settingModel.value = desired;
-                if (settingModel.value !== desired && settingModel.options.length > 0) {
-                    settingModel.value = settingModel.options[0].value;
-                }
+            const resolved = resolveSelectValue(settingModel as HTMLSelectElement, desired as string);
+            if (resolved) {
+                settingModel.value = resolved;
+            } else if (settingModel.options.length > 0) {
+                settingModel.value = settingModel.options[0].value;
             }
 
             if (elements.currentModel && !document.getElementById('setting-primary-mode-local')?.checked) {
@@ -180,8 +249,21 @@ export async function refreshModelsUI({ force = false, savedModel }: { force?: b
             }
 
             settingModelLocal.innerHTML = localOptionsHtml;
-            if (desiredLocal) {
-                settingModelLocal.value = desiredLocal;
+            const resolvedLocal = resolveSelectValue(settingModelLocal as HTMLSelectElement, desiredLocal as string);
+            if (resolvedLocal) {
+                settingModelLocal.value = resolvedLocal;
+            } else {
+                let firstLocalValue = '';
+                for (let idx = 0; idx < settingModelLocal.options.length; idx++) {
+                    const option = settingModelLocal.options[idx];
+                    if (option && isLocalModelId(option.value)) {
+                        firstLocalValue = option.value;
+                        break;
+                    }
+                }
+                if (firstLocalValue) {
+                    settingModelLocal.value = firstLocalValue;
+                }
             }
 
             if (elements.currentModel && document.getElementById('setting-primary-mode-local')?.checked) {
@@ -195,7 +277,8 @@ export async function refreshModelsUI({ force = false, savedModel }: { force?: b
             const selected = fallbackSelect.value;
             fallbackSelect.innerHTML = `<option value="">Select a model...</option>${modelOptionsHtml}`;
             if (selected) {
-                fallbackSelect.value = selected;
+                const resolved = resolveSelectValue(fallbackSelect as HTMLSelectElement, selected);
+                if (resolved) fallbackSelect.value = resolved;
             }
         }
 
@@ -231,7 +314,7 @@ export async function syncSettingsPageUI() {
         // Model Intelligence Tab
         const settingModel = document.getElementById('setting-model');
         const savedPrimaryModeLocal = getSetting('settings.primaryModeLocal') || false;
-        if (settingModel && settingModel.options.length <= 1) {
+        if (settingModel) {
             await refreshModelsUI({ force: true, savedModel: getSetting('settings.model') });
         }
 
@@ -274,8 +357,12 @@ export async function syncSettingsPageUI() {
             const display = document.getElementById('setting-temp-value');
             if (display) display.textContent = val;
         }
-        const settingThink = document.getElementById('setting-think');
-        if (settingThink) settingThink.value = getSetting('settings.thinkLevel') || '1';
+        const settingThink = elements.settingThink || document.getElementById('chat-thinking-select') || document.getElementById('setting-think');
+        if (settingThink) {
+            const thinkingLevel = normalizeThinkingLevel(getSetting('settings.thinkLevel'));
+            settingThink.value = thinkingLevel;
+            await window.dram.storage.set('settings.thinkLevel', thinkingLevel);
+        }
 
         // Primary Mode & Sections
         const primaryModeLocal = document.getElementById('setting-primary-mode-local');
@@ -322,8 +409,27 @@ export async function syncSettingsPageUI() {
         syncSecureKeyUI('setting-key-google', getSetting('settings.apiKeyGoogle'));
         syncSecureKeyUI('setting-key-groq', getSetting('settings.apiKeyGroq'));
         syncSecureKeyUI('setting-key-elevenlabs', getSetting('settings.apiKeyElevenLabs'));
+        syncSecureKeyUI('setting-key-brave', getSetting('settings.apiKeyBrave'));
+        syncSecureKeyUI('setting-key-perplexity', getSetting('settings.apiKeyPerplexity'));
+        syncSecureKeyUI('setting-key-ollama', getSetting('settings.apiKeyOllama'));
         const settingOllamaHost = document.getElementById('setting-ollama-host');
         if (settingOllamaHost) settingOllamaHost.value = getSetting('settings.ollamaHost') || 'http://localhost:11434';
+        const settingDmPolicy = document.getElementById('setting-dm-policy') as HTMLSelectElement | null;
+        if (settingDmPolicy) settingDmPolicy.value = getSetting('settings.dmPolicy') || 'open';
+        const settingWebSearchProvider = document.getElementById('setting-web-search-provider') as HTMLSelectElement | null;
+        if (settingWebSearchProvider) settingWebSearchProvider.value = getSetting('settings.webSearchProvider') || 'brave';
+        const settingWhatsappOutboundEnabled = document.getElementById('setting-whatsapp-outbound-enabled') as HTMLInputElement | null;
+        if (settingWhatsappOutboundEnabled) settingWhatsappOutboundEnabled.checked = getSetting('settings.whatsappOutboundEnabled') === true;
+        const settingDeviceAccessPolicy = document.getElementById('setting-device-access-policy') as HTMLSelectElement | null;
+        if (settingDeviceAccessPolicy) settingDeviceAccessPolicy.value = getSetting('settings.deviceAccessPolicy') || 'manual';
+        const internetAccessSelect = document.getElementById('setting-internet-access-mode') as HTMLSelectElement | null;
+        if (internetAccessSelect) {
+            internetAccessSelect.value = resolveInternetAccessMode(
+                getSetting('settings.internetAccessMode'),
+                Boolean(getSetting('settings.primaryModeLocal')),
+                getSetting('settings.webTools')
+            );
+        }
 
         // Voice & Audio Tab
         const sttProvider = document.getElementById('setting-stt-provider');
@@ -360,7 +466,7 @@ export async function syncSettingsPageUI() {
 
         // Update thinking preview
         const { updateThinkingPreview } = await import('../components/settings/tabs/model.js');
-        updateThinkingPreview();
+        updateThinkingPreview(state.currentActiveModelId);
 
         // Interface Tab
         const settingTrayDash = document.getElementById('setting-tray');

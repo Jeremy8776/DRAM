@@ -35,6 +35,18 @@ export function renderApiVaultTab() {
         description: 'Advanced neural text-to-speech.',
         placeholder: 'sk_...'
     })}
+        ${renderSecureKey({
+        id: 'setting-key-brave',
+        label: 'Brave Search Key',
+        description: 'Used when Web Search provider is set to Brave.',
+        placeholder: 'BSA...'
+    })}
+        ${renderSecureKey({
+        id: 'setting-key-perplexity',
+        label: 'Perplexity Key',
+        description: 'Used when Web Search provider is set to Perplexity.',
+        placeholder: 'pplx-...'
+    })}
     `;
 
     return `

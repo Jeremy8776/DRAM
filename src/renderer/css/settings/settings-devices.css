@@ -2,98 +2,150 @@
  * DRAM Desktop - Settings Devices Styles
  */
 
-/* ===== Device Grid ===== */
 .device-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
 }
 
 .device-card {
-    background: var(--bg-elevated);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: var(--radius);
-    padding: var(--space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    min-width: 0;
+}
+
+.device-card:last-child {
+    border-bottom: none;
+}
+
+.device-card.paired {
+    box-shadow: inset 2px 0 0 rgba(124, 58, 237, 0.65);
+    padding-left: 10px;
+}
+
+.device-card.pending {
+    box-shadow: inset 2px 0 0 rgba(245, 158, 11, 0.75);
+    padding-left: 10px;
 }
 
 .device-header {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-2);
-}
-
-.device-icon {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-hover);
-    border-radius: var(--radius);
-    font-size: 1.2rem;
-}
-
-.device-info {
+    gap: var(--space-3);
     flex: 1;
     min-width: 0;
 }
 
+.device-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+}
+
+.device-info {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.device-name-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
 .device-name {
-    font-weight: 500;
-    color: var(--text);
-    font-size: 0.9rem;
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+    text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.device-type {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-}
-
 .device-status {
-    font-size: 0.7rem;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 2px 6px;
-    border-radius: 3px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--text-tertiary);
+    background: transparent;
+    white-space: nowrap;
 }
 
 .device-status.paired {
-    color: var(--success);
-    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(124, 58, 237, 0.5);
+    color: var(--accent);
+    background: rgba(124, 58, 237, 0.1);
 }
 
 .device-status.pending {
-    color: var(--warning);
-    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.6);
+    color: var(--warning, #f59e0b);
+    background: rgba(245, 158, 11, 0.08);
 }
 
 .device-status.offline {
-    color: var(--text-muted);
-    background: var(--bg-surface);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--text-tertiary);
+    background: transparent;
 }
 
 .device-meta {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-bottom: var(--space-2);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .device-actions {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-1);
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
-.device-actions button {
-    flex: 1;
+.device-actions .tactile-btn {
+    min-height: 24px;
+    padding: 4px 10px;
+    font-size: 10px;
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 600px) {
-    .device-grid {
-        grid-template-columns: 1fr;
+@media (max-width: 900px) {
+    .device-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .device-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 }

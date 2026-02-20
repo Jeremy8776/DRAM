@@ -133,9 +133,13 @@ const dramApi = {
         // Existing
         getModels: (options) => safeInvoke('util:getModels', options),
         getPlugins: () => safeInvoke('util:getPlugins'),
+        getPluginVetting: () => safeInvoke('util:getPluginVetting'),
+        setPluginTrust: (pluginId, trustStatus) => safeInvoke('util:setPluginTrust', pluginId, trustStatus),
         // New data fetchers
         getChannels: () => safeInvoke('util:getChannels'),
-        getSkills: () => safeInvoke('util:getSkills'),
+        getSkills: (force = false) => safeInvoke('util:getSkills', !!force),
+        getSkillVetting: () => safeInvoke('util:getSkillVetting'),
+        setSkillTrust: (skillId, trustStatus) => safeInvoke('util:setSkillTrust', skillId, trustStatus),
         getDevices: () => safeInvoke('util:getDevices'),
         getCronJobs: () => safeInvoke('util:getCronJobs'),
         getMemoryStatus: () => safeInvoke('util:getMemoryStatus'),
@@ -145,10 +149,12 @@ const dramApi = {
         // Plugin management
         enablePlugin: (pluginId) => safeInvoke('util:enablePlugin', pluginId),
         disablePlugin: (pluginId) => safeInvoke('util:disablePlugin', pluginId),
+        repairPlugin: (pluginId) => safeInvoke('util:repairPlugin', pluginId),
         // Skill management
         installSkill: (skillId) => safeInvoke('util:installSkill', skillId),
+        installWslHomebrew: () => safeInvoke('util:installWslHomebrew'),
         updateSkill: (skillId) => safeInvoke('util:updateSkill', skillId),
-        toggleSkill: (skillId, enabled) => safeInvoke('util:toggleSkill', skillId, enabled),
+        toggleSkill: (skillId, enabled, options = {}) => safeInvoke('util:toggleSkill', skillId, enabled, options),
         getSkillBins: () => safeInvoke('util:getSkillBins'),
         getSkillStatusRaw: () => safeInvoke('util:getSkillStatusRaw'),
         // Device management

@@ -109,9 +109,9 @@ export function registerUtilHandlers(ipc, secureStorage, windowManager, debugLog
     // Register feature-specific handlers
     registerConfigHandlers(ipc, windowManager);
     registerModelHandlers(ipc, internalRequest);
-    registerPluginHandlers(ipc, internalRequest);
+    registerPluginHandlers(ipc, internalRequest, secureStorage);
     registerChannelHandlers(ipc, internalRequest);
-    registerSkillsHandlers(ipc, internalRequest);
+    registerSkillsHandlers(ipc, internalRequest, secureStorage);
     registerDeviceHandlers(ipc, internalRequest);
     registerSystemHandlers(ipc, windowManager, internalRequest, dramEngine, debugLog);
     registerTtsHandlers(ipc, internalRequest);

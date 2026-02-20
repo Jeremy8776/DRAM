@@ -33,45 +33,47 @@ export function showConfirmDialog({
         const overlay = createDialogOverlay();
 
         const typeConfig = {
-            warning: { icon: '!', color: '#f59e0b', border: '#f59e0b' },
-            danger: { icon: 'X', color: '#ef4444', border: '#ef4444' },
-            info: { icon: 'INFO', color: '#3b82f6', border: '#3b82f6' },
-            confirm: { icon: '?', color: '#8b5cf6', border: '#8b5cf6' }
+            warning: { icon: '!', color: '#9f7aea', border: '#7c3aed66' },
+            danger: { icon: '!', color: '#a855f7', border: '#9333ea66' },
+            info: { icon: 'i', color: 'var(--accent, #7c3aed)', border: '#7c3aed66' },
+            confirm: { icon: '?', color: 'var(--accent, #7c3aed)', border: '#7c3aed66' }
         };
         const config = typeConfig[type] || typeConfig.confirm;
 
         overlay.innerHTML = `
             <div class="dialog-box" style="
-                background: var(--bg-surface, #1a1a2e);
+                background: var(--bg-elevated, #111114);
                 border: 1px solid ${config.border};
-                border-radius: 8px;
-                padding: 28px 32px;
+                border-radius: 6px;
+                padding: 22px 24px;
                 max-width: 420px;
                 width: 90%;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);
                 animation: dialogSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             ">
                 <div class="dialog-header" style="
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
+                    gap: 10px;
+                    margin-bottom: 12px;
                 ">
                     <div class="dialog-icon" style="
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 50%;
-                        background: ${config.color}20;
-                        border: 1px solid ${config.color}40;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 4px;
+                        background: color-mix(in srgb, ${config.color} 10%, transparent);
+                        border: 1px solid color-mix(in srgb, ${config.color} 28%, transparent);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 20px;
+                        font-size: 12px;
+                        font-weight: 700;
                         color: ${config.color};
+                        letter-spacing: 0.05em;
                     ">${config.icon}</div>
                     <h3 style="
                         margin: 0;
-                        font-size: 18px;
+                        font-size: 16px;
                         font-weight: 600;
                         color: var(--text-primary, #e0e0e0);
                         letter-spacing: 0.02em;
@@ -79,7 +81,7 @@ export function showConfirmDialog({
                 </div>
                 
                 <div class="dialog-body" style="
-                    margin-bottom: 24px;
+                    margin-bottom: 18px;
                 ">
                     <p style="
                         margin: 0 0 8px 0;
@@ -97,32 +99,32 @@ export function showConfirmDialog({
                 
                 <div class="dialog-footer" style="
                     display: flex;
-                    gap: 12px;
+                    gap: 8px;
                     justify-content: flex-end;
                 ">
                     <button class="dialog-btn dialog-btn-cancel" style="
-                        padding: 10px 20px;
+                        padding: 8px 14px;
                         border: 1px solid var(--border, #333);
                         background: transparent;
                         color: var(--text-secondary, #888);
-                        border-radius: 6px;
-                        font-size: 13px;
+                        border-radius: 4px;
+                        font-size: 12px;
                         cursor: pointer;
                         transition: all 0.15s ease;
                         font-family: inherit;
                     ">${escapeHtml(cancelText)}</button>
                     <button class="dialog-btn dialog-btn-confirm" style="
-                        padding: 10px 20px;
-                        border: none;
-                        background: ${config.color};
+                        padding: 8px 14px;
+                        border: 1px solid color-mix(in srgb, ${config.color} 60%, transparent);
+                        background: color-mix(in srgb, ${config.color} 22%, var(--bg-elevated, #111114));
                         color: white;
-                        border-radius: 6px;
-                        font-size: 13px;
+                        border-radius: 4px;
+                        font-size: 12px;
                         font-weight: 500;
                         cursor: pointer;
                         transition: all 0.15s ease;
                         font-family: inherit;
-                        box-shadow: 0 2px 8px ${config.color}40;
+                        box-shadow: none;
                     ">${escapeHtml(confirmText)}</button>
                 </div>
             </div>

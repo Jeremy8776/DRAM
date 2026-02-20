@@ -55,3 +55,6 @@ Microsoft/
 openclaw_help.txt
 gateway_help.txt
 help_gateway.txt
+
+# Local memory snapshots
+memory/

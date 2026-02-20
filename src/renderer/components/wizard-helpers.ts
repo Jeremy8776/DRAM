@@ -1,6 +1,7 @@
 import { PLUGIN_SETUP_REQUIREMENTS, PLUGIN_INSTALL_ACTIONS } from '../data/plugin-metadata.js';
 import { getIcon } from '../modules/icons.js';
 import { escapeHtml } from '../modules/utils.js';
+import { deriveSkillRequirementActions } from '../modules/skill-requirements.js';
 
 export function generateModelOptions(availableModels, selectedId) {
     let html = (!selectedId || selectedId === '')
@@ -15,7 +16,7 @@ export function generateModelOptions(availableModels, selectedId) {
             { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Groq)' },
             { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
             { id: 'gpt-4o', name: 'GPT-4o' },
-            { id: 'ollama', name: 'Local (Ollama)' }
+            { id: 'ollama/llama3:latest', name: 'Local llama3:latest' }
         ];
         html += options.map((option) =>
             `<option value="${escapeHtml(option.id)}" ${option.id === selectedId ? 'selected' : ''}>${escapeHtml(option.name)}</option>`
@@ -86,18 +87,25 @@ export function renderPluginList(availablePlugins, wizardState, isEngineReady) {
     return sortedPlugins.map((plugin) => {
         const isActive = activePlugins.includes(plugin.id);
         const needsSetup = PLUGIN_SETUP_REQUIREMENTS[plugin.id];
-        const isMissing = plugin.status === 'missing';
+        const status = String(plugin.status || '').toLowerCase();
+        const isMissing = status === 'missing';
+        const isError = status === 'error';
+        const isUnavailable = status === 'unavailable';
         const installAction = PLUGIN_INSTALL_ACTIONS && PLUGIN_INSTALL_ACTIONS[plugin.id];
         const canInstall = isMissing && installAction;
-        const badge = isMissing ? 'MISSING' : (needsSetup ? 'SETUP' : '');
+        const badge = (isMissing || isUnavailable) ? 'MISSING' : (isError ? 'ERROR' : (needsSetup ? 'SETUP' : ''));
         const installBtn = canInstall
             ? `<button class="tactile-btn sm secondary wizard-install-btn" data-plugin-id="${escapeHtml(plugin.id)}" data-install-command="${escapeHtml(installAction.command || '')}">Install</button>`
             : '';
-        const statusClass = isActive ? 'enabled' : (isMissing ? 'missing' : 'disabled');
-        const statusLabel = isMissing ? 'UNSUPPORTED' : (isActive ? 'ENABLED' : 'DISABLED');
+        const unavailable = isMissing || isUnavailable;
+        const statusClass = isError ? 'error' : (isActive ? 'enabled' : (unavailable ? 'missing' : 'disabled'));
+        const statusLabel = isError ? 'ERROR' : (unavailable ? 'UNAVAILABLE' : (isActive ? 'ENABLED' : 'DISABLED'));
+        const trustStatus = String(plugin.trustStatus || 'trusted').toLowerCase();
+        const toggleDisabled = !isEngineReady || unavailable || (isError && !isActive) || trustStatus === 'blocked';
+        const issueText = isError ? (plugin.loadError || 'Plugin failed to load in runtime') : '';
 
         return `
-        <div class="plugin-card premium-card ${isActive ? 'active' : ''} ${isMissing ? 'unsupported' : ''} ${isEngineReady ? '' : 'engine-offline'}" data-id="${escapeHtml(plugin.id)}">
+        <div class="plugin-card premium-card ${isActive ? 'active' : ''} ${unavailable ? 'unsupported' : ''} ${isError ? 'degraded' : ''} ${isEngineReady ? '' : 'engine-offline'}" data-id="${escapeHtml(plugin.id)}">
             <div class="plugin-card-header">
                 <div class="plugin-info">
                     <div class="plugin-name">${escapeHtml(plugin.name)} ${badge ? `<span class="setup-badge">${badge}</span>` : ''}</div>
@@ -106,12 +114,13 @@ export function renderPluginList(availablePlugins, wizardState, isEngineReady) {
                 <div class="plugin-controls">
                     ${installBtn}
                     <label class="switch sm">
-                        <input type="checkbox" class="plugin-toggle" data-id="${escapeHtml(plugin.id)}" ${isActive ? 'checked' : ''} ${isEngineReady && !isMissing ? '' : 'disabled'}>
+                        <input type="checkbox" class="plugin-toggle" data-id="${escapeHtml(plugin.id)}" ${isActive ? 'checked' : ''} ${toggleDisabled ? 'disabled' : ''}>
                         <span class="slider"></span>
                     </label>
                 </div>
             </div>
             <div class="plugin-description">${escapeHtml(plugin.description || 'Neural interface extension.')}</div>
+            ${issueText ? `<div class="plugin-description">${escapeHtml(issueText)}</div>` : ''}
             <div class="plugin-footer">
                 <div class="plugin-status ${statusClass}">
                     ${statusLabel}
@@ -135,23 +144,41 @@ export function renderSkillsList(availableSkills, wizardState, isEngineReady) {
     }
     const skillsMap = wizardState.skills || {};
     return availableSkills.map((skill) => {
-        const isEnabled = skillsMap[skill.id] !== false;
+        const isEligible = skill.eligible !== false;
+        const hasWizardOverride = Object.prototype.hasOwnProperty.call(skillsMap, skill.id);
+        const defaultEnabled = skill.enabled !== false;
+        const requestedEnabled = hasWizardOverride ? skillsMap[skill.id] !== false : defaultEnabled;
+        const isEnabled = isEligible && requestedEnabled;
+        const requirementAnalysis = deriveSkillRequirementActions(skill);
+        const requirementHint = requirementAnalysis.requirements.slice(0, 3).join(' | ');
+        const fixLabel = requirementAnalysis.hasActionableFix ? 'Guided Fix' : 'View Issues';
+        const trustStatus = String(skill.trustStatus || 'trusted').toLowerCase();
+        const toggleDisabled = !isEngineReady || trustStatus === 'blocked';
         return `
-        <div class="plugin-card premium-card ${isEnabled ? 'active' : ''} ${isEngineReady ? '' : 'engine-offline'}" data-skill-id="${escapeHtml(skill.id)}">
+        <div class="plugin-card premium-card ${isEnabled ? 'active' : ''} ${isEligible ? '' : 'needs-setup'} ${isEngineReady ? '' : 'engine-offline'}" data-skill-id="${escapeHtml(skill.id)}">
             <div class="plugin-card-header">
                 <div class="plugin-info">
                     <div class="plugin-name">${escapeHtml(skill.name)}</div>
                     <div class="plugin-version">${escapeHtml(skill.version ? `v${skill.version}` : '1.0.0')}</div>
                 </div>
                 <label class="switch sm">
-                    <input type="checkbox" class="skill-toggle" data-skill-id="${escapeHtml(skill.id)}" ${isEnabled ? 'checked' : ''} ${isEngineReady ? '' : 'disabled'}>
+                    <input type="checkbox" class="skill-toggle" data-skill-id="${escapeHtml(skill.id)}" ${isEnabled ? 'checked' : ''} ${toggleDisabled ? 'disabled' : ''}>
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="plugin-description">${escapeHtml(skill.description || 'Neural capability extension.')}</div>
+            ${!isEligible && requirementHint ? `<div class="skill-requirements-note">${escapeHtml(requirementHint)}</div>` : ''}
+            ${!isEligible
+                ? `
+            <div class="skill-actions-row">
+                <button class="tactile-btn sm secondary skill-fix-btn" data-skill-id="${escapeHtml(skill.id)}">${escapeHtml(fixLabel)}</button>
+                <button class="tactile-btn sm secondary skill-recheck-btn" data-skill-id="${escapeHtml(skill.id)}">Recheck</button>
+            </div>
+            `
+                : ''}
             <div class="plugin-footer">
-                <div class="plugin-status ${isEnabled ? 'enabled' : 'disabled'}">
-                    ${isEnabled ? 'ENABLED' : 'DISABLED'}
+                <div class="plugin-status ${isEligible ? (isEnabled ? 'enabled' : 'disabled') : 'missing'}">
+                    ${isEligible ? (isEnabled ? 'ENABLED' : 'DISABLED') : 'SETUP NEEDED'}
                     ${!isEngineReady ? ' <span class="offline-hint">(OFFLINE)</span>' : ''}
                 </div>
             </div>

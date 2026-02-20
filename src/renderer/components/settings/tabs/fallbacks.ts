@@ -95,7 +95,7 @@ function renderGroupedModelOptions(models) {
                 <option value="groq/llama-3.1-8b-instant">Llama 3.1 8B</option>
             </optgroup>
             <optgroup label="Local (Ollama)">
-                <option value="ollama/ollama">Local ollama-host</option>
+                <option value="ollama/llama3:latest">Local llama3:latest</option>
             </optgroup>
         `;
     }

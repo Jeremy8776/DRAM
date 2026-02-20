@@ -7,6 +7,15 @@ import { renderSelect, renderSection, renderSwitch, renderInput } from '../../..
 export function renderVoiceTab() {
     const sttContent = `
         ${renderSelect({
+        id: 'setting-audio-input',
+        label: 'Microphone Input',
+        description: 'Select the input device used for Voice Mode.',
+        options: [
+            { value: '', text: 'Default System Device' }
+        ],
+        value: ''
+    })}
+        ${renderSelect({
         id: 'setting-stt-provider',
         label: 'Speech Recognition (STT)',
         description: 'Engine for converting audio input to text.',

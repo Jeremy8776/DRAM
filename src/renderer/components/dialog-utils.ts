@@ -8,13 +8,13 @@ export function createDialogOverlay() {
     overlay.style.cssText = `
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
+        background: rgba(8, 6, 14, 0.62);
+        backdrop-filter: blur(3px);
         z-index: 10000;
         display: flex;
         align-items: center;
         justify-content: center;
-        animation: dialogFadeIn 0.2s ease;
+        animation: dialogFadeIn 0.18s ease;
     `;
     return overlay;
 }
@@ -31,7 +31,7 @@ export function ensureDialogAnimations() {
             to { opacity: 1; }
         }
         @keyframes dialogSlideUp {
-            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            from { opacity: 0; transform: translateY(12px) scale(0.985); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .dialog-btn:hover {

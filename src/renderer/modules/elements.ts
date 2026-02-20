@@ -58,7 +58,7 @@ export function refreshElements() {
     elements.settingSessionKey = document.getElementById('setting-session-key');
     elements.settingModel = document.getElementById('setting-model');
     elements.settingTemp = document.getElementById('setting-temp');
-    elements.settingThink = document.getElementById('setting-think');
+    elements.settingThink = document.getElementById('chat-thinking-select') || document.getElementById('setting-think');
 
     // API Vault
     elements.settingKeyAnthropic = document.getElementById('setting-key-anthropic');
@@ -66,6 +66,7 @@ export function refreshElements() {
     elements.settingKeyGoogle = document.getElementById('setting-key-google');
     elements.settingKeyGroq = document.getElementById('setting-key-groq');
     elements.settingOllamaHost = document.getElementById('setting-ollama-host');
+    elements.settingKeyOllama = document.getElementById('setting-key-ollama');
 
     elements.settingWebTools = document.getElementById('setting-web-tools');
     elements.settingWebHeadless = document.getElementById('setting-web-headless');
@@ -77,6 +78,9 @@ export function refreshElements() {
     elements.settingAdvancedMode = document.getElementById('setting-advanced-mode');
     elements.settingHaptics = document.getElementById('setting-haptics');
     elements.settingDmPolicy = document.getElementById('setting-dm-policy');
+    elements.settingWebSearchProvider = document.getElementById('setting-web-search-provider');
+    elements.settingWhatsappOutboundEnabled = document.getElementById('setting-whatsapp-outbound-enabled');
+    elements.settingDeviceAccessPolicy = document.getElementById('setting-device-access-policy');
 
     // Actions & Status
     elements.btnRotateToken = document.getElementById('btn-rotate-token');
@@ -159,6 +163,14 @@ export function refreshElements() {
     elements.viewUsage = document.getElementById('usage-view');
     elements.btnRefreshUsage = document.getElementById('btn-refresh-usage');
     elements.btnResetSession = document.getElementById('btn-reset-session');
+
+    // Thinking Drawer
+    elements.thinkingDrawer = document.getElementById('thinking-drawer');
+    elements.thinkingStatusText = document.getElementById('thinking-status-text');
+    elements.thinkingContent = document.getElementById('thinking-content');
+    elements.btnToggleThinking = document.getElementById('btn-toggle-thinking');
+    elements.btnCloseThinking = document.getElementById('btn-close-thinking');
+    elements.thinkingHeader = document.querySelector('.thinking-drawer-header');
 }
 
 

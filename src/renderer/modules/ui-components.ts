@@ -176,7 +176,7 @@ export function renderSecureKey({ id, label, description, placeholder = '', clas
             <div class="key-field-container" data-target="${id}">
                 <div class="key-input-wrapper">
                     <input type="password" id="${id}" class="secure-key-input mono-input" placeholder="${placeholder}" readonly value="">
-                    <div class="key-status-dots hidden">••••••••••••••••••••••••</div>
+                    <div class="key-status-dots hidden">************************</div>
                 </div>
                 <div class="key-actions">
                     <button class="tactile-btn sm secondary btn-edit-key" data-target="${id}">Change</button>

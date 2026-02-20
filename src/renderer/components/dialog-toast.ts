@@ -1,6 +1,29 @@
 import { escapeHtml } from './dialog-utils.js';
 
 const activeToastsById = new Map();
+const TOAST_CONTAINER_ID = 'dram-toast-stack';
+
+function ensureToastContainer() {
+    let container = document.getElementById(TOAST_CONTAINER_ID);
+    if (container) return container;
+
+    container = document.createElement('div');
+    container.id = TOAST_CONTAINER_ID;
+    container.style.cssText = `
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: flex-end;
+        gap: 10px;
+        z-index: 10001;
+        max-width: calc(100vw - 24px);
+        pointer-events: none;
+    `;
+    document.body.appendChild(container);
+    return container;
+}
 
 function clearToastById(id) {
     const existing = activeToastsById.get(id);
@@ -43,56 +66,60 @@ export function showToast({
     const toast = document.createElement('div');
 
     const typeConfig = {
-        success: { icon: 'OK', color: '#10b981', bg: '#10b98115' },
-        error: { icon: 'ERR', color: '#ef4444', bg: '#ef444415' },
-        warning: { icon: '!', color: '#f59e0b', bg: '#f59e0b15' },
-        info: { icon: 'INFO', color: '#3b82f6', bg: '#3b82f615' }
+        success: { icon: 'OK', color: 'var(--accent, #7c3aed)', bg: 'rgba(124, 58, 237, 0.14)' },
+        error: { icon: 'ERR', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.14)' },
+        warning: { icon: '!', color: '#b794f4', bg: 'rgba(183, 148, 244, 0.14)' },
+        info: { icon: 'i', color: 'var(--accent, #7c3aed)', bg: 'rgba(124, 58, 237, 0.14)' }
     };
     const config = typeConfig[type] || typeConfig.info;
+    const toastContainer = ensureToastContainer();
+    const autoDismissMs = Math.max(0, Number(duration) || 0);
+    let dismissTimer: ReturnType<typeof setTimeout> | null = null;
+    let dismissStartedAt = 0;
+    let dismissRemainingMs = autoDismissMs;
 
     toast.style.cssText = `
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        background: var(--bg-surface, #1a1a2e);
-        border: 1px solid ${config.color}40;
-        border-left: 3px solid ${config.color};
-        border-radius: 6px;
-        padding: 14px 20px;
+        background: var(--bg-elevated, #111114);
+        border: 1px solid color-mix(in srgb, ${config.color} 38%, var(--border, #333));
+        border-left: 2px solid ${config.color};
+        border-radius: 5px;
+        padding: 10px 12px;
         display: flex;
         align-items: center;
-        gap: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-        z-index: 10001;
+        gap: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
         animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         max-width: 360px;
+        width: min(360px, calc(100vw - 36px));
+        pointer-events: auto;
     `;
 
     toast.innerHTML = `
         <span style="
             width: 22px;
             height: 22px;
-            border-radius: 50%;
+            border-radius: 4px;
             background: ${config.bg};
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 10px;
+            font-weight: 700;
             color: ${config.color};
             flex-shrink: 0;
         ">${config.icon}</span>
         <span style="
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-primary, #e0e0e0);
             flex: 1;
         ">${escapeHtml(message)}</span>
         ${actionLabel ? `<button type="button" class="toast-action-btn" style="
-            border: 1px solid ${config.color}55;
+            border: 1px solid color-mix(in srgb, ${config.color} 45%, var(--border, #333));
             background: ${config.bg};
             color: ${config.color};
-            border-radius: 5px;
-            padding: 6px 10px;
-            font-size: 12px;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
             font-weight: 600;
             letter-spacing: 0.01em;
             cursor: pointer;
@@ -116,10 +143,22 @@ export function showToast({
         document.head.appendChild(style);
     }
 
-    document.body.appendChild(toast);
+    toastContainer.appendChild(toast);
+
+    const clearDismissTimer = () => {
+        if (!dismissTimer) return;
+        clearTimeout(dismissTimer);
+        dismissTimer = null;
+        if (dismissStartedAt > 0) {
+            const elapsed = Date.now() - dismissStartedAt;
+            dismissRemainingMs = Math.max(0, dismissRemainingMs - elapsed);
+            dismissStartedAt = 0;
+        }
+    };
 
     const dismiss = () => {
         if (toast.dataset.closing === '1') return;
+        clearDismissTimer();
         toast.dataset.closing = '1';
         toast.style.animation = 'toastSlideOut 0.2s ease forwards';
         setTimeout(() => {
@@ -131,6 +170,19 @@ export function showToast({
                 }
             }
         }, 200);
+    };
+
+    const scheduleDismiss = () => {
+        if (autoDismissMs <= 0 || toast.dataset.closing === '1') return;
+        if (dismissRemainingMs <= 0) {
+            dismiss();
+            return;
+        }
+        dismissStartedAt = Date.now();
+        dismissTimer = setTimeout(() => {
+            dismissTimer = null;
+            dismiss();
+        }, dismissRemainingMs);
     };
 
     if (toastId) {
@@ -149,10 +201,16 @@ export function showToast({
         });
     }
 
-    if (Number(duration) > 0) {
-        setTimeout(() => {
-            dismiss();
-        }, duration);
+    if (autoDismissMs > 0) {
+        toast.addEventListener('mouseenter', () => {
+            if (toast.dataset.closing === '1') return;
+            clearDismissTimer();
+        });
+        toast.addEventListener('mouseleave', () => {
+            if (toast.dataset.closing === '1') return;
+            scheduleDismiss();
+        });
+        scheduleDismiss();
     }
 
     return { dismiss, element: toast };

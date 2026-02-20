@@ -122,7 +122,7 @@ function resolveOpenClawEntryFromPackageDir(packageDir) {
 
   try {
     if (fs.existsSync(packageJsonPath)) {
-      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const pkg = JSON.parse(normalizeJsonSource(fs.readFileSync(packageJsonPath, 'utf8')));
       const bin = pkg?.bin;
       const binPath = typeof bin === 'string'
         ? bin
@@ -222,6 +222,73 @@ function quoteForCmd(arg) {
   return `"${str.replace(/"/g, '""')}"`;
 }
 
+function normalizeJsonSource(raw) {
+  const text = String(raw ?? '').replace(/^\uFEFF/, '');
+  const firstJsonToken = text.search(/[{\[]/);
+  if (firstJsonToken > 0) return text.slice(firstJsonToken);
+  return text;
+}
+
+function parseVersionScore(rawVersion) {
+  const value = String(rawVersion || '').trim();
+  if (!value) return -1;
+  const match = value.match(/(\d+)\.(\d+)\.(\d+)/) || value.match(/(\d+)\.(\d+)/);
+  if (!match) return -1;
+  const major = Number(match[1] || 0);
+  const minor = Number(match[2] || 0);
+  const patch = Number(match[3] || 0);
+  if (!Number.isFinite(major) || !Number.isFinite(minor) || !Number.isFinite(patch)) return -1;
+  return (major * 1_000_000) + (minor * 1_000) + patch;
+}
+
+function readPackageVersionFromDir(packageDir) {
+  if (!packageDir) return 'unknown';
+  try {
+    const packageJsonPath = path.join(packageDir, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) return 'unknown';
+    const pkg = JSON.parse(normalizeJsonSource(fs.readFileSync(packageJsonPath, 'utf8')));
+    const version = typeof pkg?.version === 'string' ? pkg.version.trim() : '';
+    return version || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function inferPackageDirFromCliPath(cliPath) {
+  if (typeof cliPath !== 'string' || !cliPath.trim()) return null;
+  const normalized = path.normalize(cliPath);
+  const marker = `${path.sep}node_modules${path.sep}openclaw`;
+  const idx = normalized.toLowerCase().indexOf(marker.toLowerCase());
+  if (idx !== -1) {
+    return normalized.slice(0, idx + marker.length);
+  }
+
+  const parentCandidates = [];
+  let current = path.dirname(normalized);
+  for (let i = 0; i < 6; i += 1) {
+    parentCandidates.push(current);
+    const next = path.dirname(current);
+    if (!next || next === current) break;
+    current = next;
+  }
+
+  for (const dir of parentCandidates) {
+    try {
+      const packageJsonPath = path.join(dir, 'package.json');
+      if (!fs.existsSync(packageJsonPath)) continue;
+      const pkg = JSON.parse(normalizeJsonSource(fs.readFileSync(packageJsonPath, 'utf8')));
+      const hasOpenClawBin = typeof pkg?.bin === 'string'
+        || (pkg?.bin && typeof pkg.bin === 'object' && Object.keys(pkg.bin).some((key) => String(key).toLowerCase().includes('openclaw')));
+      if (String(pkg?.name || '').toLowerCase().includes('openclaw') || hasOpenClawBin) {
+        return dir;
+      }
+    } catch {
+      // ignore parse/probe failures
+    }
+  }
+  return null;
+}
+
 function listListeningPidsOnPortSync(port) {
   if (!Number.isFinite(Number(port))) return [];
 
@@ -280,6 +347,7 @@ class DramEngine {
     this.initialized = false;
     this.initializingPromise = null;
     this.cliPath = null;
+    this.cliSource = null;
     this.useNodeSpawn = false;
     this.configDir = OPENCLAW_CONFIG_DIR;
     this.configPath = OPENCLAW_CONFIG_PATH;
@@ -288,6 +356,7 @@ class DramEngine {
     this.engineProcess = null;
     this.ws = null;
     this.pendingRequests = new Map();
+    this.wsUnsupportedMgmtMethods = new Set(['plugins.list', 'skills.check']);
     this.embeddedGatewayToken = crypto.randomUUID();
     this.deviceIdentity = null;
     this.lastCliProbeAt = 0;
@@ -355,16 +424,27 @@ class DramEngine {
     }, delay);
   }
 
-  async findCli() {
+  async findCli(options = {}) {
     console.log('[DramEngine] findCli() starting...');
+    const preferGlobal = options?.preferGlobal === undefined ? !app.isPackaged : Boolean(options?.preferGlobal);
+    const ignoreCurrent = Boolean(options?.ignoreCurrent);
+    const forceSource = options?.forceSource === 'global' || options?.forceSource === 'bundled'
+      ? options.forceSource
+      : null;
 
-    if (this.cliPath) {
+    if (this.cliPath && !ignoreCurrent) {
       try {
         if (fs.existsSync(this.cliPath)) return true;
       } catch {
         // stale path, continue probe
       }
       this.cliPath = null;
+      this.cliSource = null;
+      this.useNodeSpawn = false;
+    }
+    if (ignoreCurrent) {
+      this.cliPath = null;
+      this.cliSource = null;
       this.useNodeSpawn = false;
     }
 
@@ -374,54 +454,74 @@ class DramEngine {
       return false;
     }
 
+    const candidates = [];
+    const seen = new Set();
+    const addCandidate = (candidate) => {
+      if (!candidate?.path || !candidate?.source) return;
+      const normalized = path.normalize(candidate.path);
+      const key = normalized.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      const source = candidate.source === 'bundled' ? 'bundled' : 'global';
+      const inferredPackageDir = candidate.packageDir || inferPackageDirFromCliPath(normalized);
+      const version = candidate.version || readPackageVersionFromDir(inferredPackageDir);
+      const score = parseVersionScore(version);
+      candidates.push({
+        path: normalized,
+        source,
+        useNodeSpawn: Boolean(candidate.useNodeSpawn),
+        version: version || 'unknown',
+        score
+      });
+    };
+
     const bundledEntry = resolveBundledOpenClawEntry();
     if (bundledEntry) {
-      this.cliPath = bundledEntry;
-      this.useNodeSpawn = true;
-      this.lastCliProbeAt = now;
-      this.lastCliProbeOk = true;
-      console.log('[DramEngine] Using bundled OpenClaw entry:', bundledEntry);
-      return true;
+      addCandidate({
+        path: bundledEntry,
+        source: 'bundled',
+        useNodeSpawn: true
+      });
     }
 
-    const candidatePaths = new Set();
-    const packageDirs = new Set();
+    const globalCandidatePaths = new Set();
+    const globalPackageDirs = new Set();
     if (process.platform === 'win32') {
       const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
       const npmPrefix = process.env.npm_config_prefix || path.join(appData, 'npm');
-      candidatePaths.add(path.join(npmPrefix, 'openclaw.cmd'));
-      candidatePaths.add(path.join(npmPrefix, 'node_modules', '.bin', 'openclaw.cmd'));
-      packageDirs.add(path.join(npmPrefix, 'node_modules', 'openclaw'));
-      packageDirs.add(path.join(appData, 'npm', 'node_modules', 'openclaw'));
+      globalCandidatePaths.add(path.join(npmPrefix, 'openclaw.cmd'));
+      globalCandidatePaths.add(path.join(npmPrefix, 'node_modules', '.bin', 'openclaw.cmd'));
+      globalPackageDirs.add(path.join(npmPrefix, 'node_modules', 'openclaw'));
+      globalPackageDirs.add(path.join(appData, 'npm', 'node_modules', 'openclaw'));
       for (const hit of listExecutablesInPath(['openclaw.cmd', 'openclaw'])) {
-        candidatePaths.add(hit);
+        globalCandidatePaths.add(hit);
       }
     } else {
-      candidatePaths.add('/usr/local/bin/openclaw');
-      candidatePaths.add('/usr/bin/openclaw');
-      packageDirs.add('/usr/local/lib/node_modules/openclaw');
-      packageDirs.add('/usr/lib/node_modules/openclaw');
+      globalCandidatePaths.add('/usr/local/bin/openclaw');
+      globalCandidatePaths.add('/usr/bin/openclaw');
+      globalPackageDirs.add('/usr/local/lib/node_modules/openclaw');
+      globalPackageDirs.add('/usr/lib/node_modules/openclaw');
       for (const hit of listExecutablesInPath(['openclaw'])) {
-        candidatePaths.add(hit);
+        globalCandidatePaths.add(hit);
       }
     }
 
-    for (const packageDir of packageDirs) {
+    for (const packageDir of globalPackageDirs) {
       const resolvedEntry = resolveOpenClawEntryFromPackageDir(packageDir);
-      if (resolvedEntry) {
-        this.cliPath = resolvedEntry;
-        this.useNodeSpawn = true;
-        this.lastCliProbeAt = now;
-        this.lastCliProbeOk = true;
-        console.log('[DramEngine] Found global OpenClaw entry:', resolvedEntry);
-        return true;
-      }
+      if (!resolvedEntry) continue;
+      addCandidate({
+        path: resolvedEntry,
+        source: 'global',
+        useNodeSpawn: true,
+        packageDir
+      });
     }
 
-    for (const candidate of candidatePaths) {
+    for (const candidate of globalCandidatePaths) {
       if (!candidate) continue;
       const normalized = path.normalize(candidate);
       const lower = normalized.toLowerCase();
+      // Avoid recursive dram-desktop hits
       if (lower.includes('dram-desktop') || lower.includes('resources') || lower.includes('dist')) {
         continue;
       }
@@ -433,25 +533,48 @@ class DramEngine {
 
       const resolvedMjs = resolveOpenClawMjsFromShim(normalized);
       if (resolvedMjs) {
-        this.cliPath = resolvedMjs;
-        this.useNodeSpawn = true;
-        this.lastCliProbeAt = now;
-        this.lastCliProbeOk = true;
-        console.log('[DramEngine] Found OpenClaw mjs via shim:', resolvedMjs);
-        return true;
+        addCandidate({
+          path: resolvedMjs,
+          source: 'global',
+          useNodeSpawn: true
+        });
+        continue;
       }
 
-      this.cliPath = normalized;
-      this.useNodeSpawn = lower.endsWith('.mjs') || lower.endsWith('.js');
-      this.lastCliProbeAt = now;
-      this.lastCliProbeOk = true;
-      console.log('[DramEngine] Found OpenClaw in PATH:', normalized);
-      return true;
+      addCandidate({
+        path: normalized,
+        source: 'global',
+        useNodeSpawn: lower.endsWith('.mjs') || lower.endsWith('.js')
+      });
     }
 
+    let eligible = forceSource ? candidates.filter((candidate) => candidate.source === forceSource) : candidates;
+    if (eligible.length === 0 && forceSource) {
+      eligible = candidates;
+    }
+    if (eligible.length === 0) {
+      this.lastCliProbeAt = now;
+      this.lastCliProbeOk = false;
+      return false;
+    }
+
+    eligible.sort((left, right) => {
+      if (left.score !== right.score) return right.score - left.score;
+      if (left.source !== right.source) {
+        if (preferGlobal) return left.source === 'global' ? -1 : 1;
+        return left.source === 'bundled' ? -1 : 1;
+      }
+      return left.path.localeCompare(right.path);
+    });
+
+    const selected = eligible[0];
+    this.cliPath = selected.path;
+    this.cliSource = selected.source;
+    this.useNodeSpawn = selected.useNodeSpawn;
     this.lastCliProbeAt = now;
-    this.lastCliProbeOk = false;
-    return false;
+    this.lastCliProbeOk = true;
+    console.log(`[DramEngine] Selected ${selected.source} OpenClaw entry: ${selected.path} (version ${selected.version})`);
+    return true;
   }
 
   /**
@@ -518,10 +641,19 @@ class DramEngine {
       config.gateway.controlUi.allowedOrigins = ['*'];
     }
 
+    // Do not force-create models.providers.ollama here.
+    // OpenClaw implicit Ollama discovery requires the explicit ollama provider
+    // entry to be absent unless users intentionally configure it manually.
+
     // OpenClaw schema does not support agents.defaults.thinkLevel.
     // Keep this setting renderer-local and strip stale values to avoid boot failures.
     if (config.agents?.defaults && Object.prototype.hasOwnProperty.call(config.agents.defaults, 'thinkLevel')) {
       delete config.agents.defaults.thinkLevel;
+    }
+    // Legacy DRAM builds wrote sendPolicy under agents.defaults, but OpenClaw
+    // expects session.sendPolicy. Strip the legacy key on every startup pass.
+    if (config.agents?.defaults && Object.prototype.hasOwnProperty.call(config.agents.defaults, 'sendPolicy')) {
+      delete config.agents.defaults.sendPolicy;
     }
 
     return config;
@@ -534,7 +666,7 @@ class DramEngine {
   _syncGatewayTokenFromConfig() {
     try {
       if (!fs.existsSync(this.configPath)) return;
-      const raw = fs.readFileSync(this.configPath, 'utf-8');
+      const raw = normalizeJsonSource(fs.readFileSync(this.configPath, 'utf-8'));
       const parsed = JSON.parse(raw);
       const token = typeof parsed?.gateway?.auth?.token === 'string'
         ? parsed.gateway.auth.token.trim()
@@ -692,6 +824,41 @@ class DramEngine {
     return claim;
   }
 
+  _isBundledCliCompatibilityFailure(err) {
+    const message = String(err?.message || err || '');
+    if (!message) return false;
+    return /newer OpenClaw|program\.configureHelp is not a function|Failed to start CLI|Config invalid/i.test(message);
+  }
+
+  async _retryInitializationWithGlobalCli(originalError) {
+    if (this.cliSource !== 'bundled') return false;
+    if (!this._isBundledCliCompatibilityFailure(originalError)) return false;
+
+    console.warn('[DramEngine] Bundled OpenClaw appears incompatible with current config. Retrying with global CLI...');
+    this.debugLog('[DramEngine] Bundled OpenClaw appears incompatible with current config. Retrying with global CLI...');
+
+    if (this.ws) {
+      try { this.ws.close(); } catch { /* noop */ }
+      this.ws = null;
+    }
+    if (this.engineProcess) {
+      try { this.engineProcess.kill(); } catch { /* noop */ }
+      this.engineProcess = null;
+    }
+
+    const hasGlobalCli = await this.findCli({ preferGlobal: true, ignoreCurrent: true, forceSource: 'global' });
+    if (!hasGlobalCli || this.cliSource !== 'global') {
+      return false;
+    }
+
+    this.debugLog('DramEngine: Retrying OpenClaw startup with global CLI:', this.cliPath);
+    await this._spawnGateway();
+    await this._connectGateway();
+    this.initialized = true;
+    this.debugLog('DramEngine: Ready (OpenClaw Symbiotic Mode)');
+    return true;
+  }
+
   /**
    * Initialize the engine by spawning OpenClaw process and connecting via WS.
    */
@@ -723,6 +890,12 @@ class DramEngine {
         this.initialized = true;
         this.debugLog('DramEngine: Ready (OpenClaw Symbiotic Mode)');
       } catch (err) {
+        try {
+          const recovered = await this._retryInitializationWithGlobalCli(err);
+          if (recovered) return;
+        } catch (retryErr) {
+          console.error('[DramEngine] Global CLI retry failed:', retryErr?.message || retryErr);
+        }
         console.error('[DramEngine] Initialization failed:', err.message);
         this.debugLog('DramEngine: Initialization failed:', err.message);
         throw err;
@@ -756,6 +929,16 @@ class DramEngine {
     }
 
     console.log('[DramEngine] Spawning OpenClaw gateway in background...');
+    const startupFailureLines = [];
+    const rememberFailureLine = (rawLine) => {
+      const line = String(rawLine || '').trim();
+      if (!line) return;
+      if (!/Config was last written by a newer OpenClaw|Failed to start CLI|program\.configureHelp is not a function|Config invalid/i.test(line)) {
+        return;
+      }
+      startupFailureLines.push(line);
+      if (startupFailureLines.length > 6) startupFailureLines.shift();
+    };
 
     // Ensure we have a config file with security settings but NOT our ephemeral token
     await this._prepareConfig();
@@ -816,6 +999,7 @@ class DramEngine {
       if (line) {
         console.log(`[OpenClaw] ${line}`);
         this.debugLog(`[OpenClaw] ${line}`);
+        rememberFailureLine(line);
       }
     });
 
@@ -824,6 +1008,7 @@ class DramEngine {
       if (line) {
         console.error(`[OpenClaw] ${line}`);
         this.debugLog(`[OpenClaw:err] ${line}`);
+        rememberFailureLine(line);
 
         // Intercept agent-level errors and forward as synthetic chat error events.
         // The gateway logs these to stderr but doesn't always send WS events.
@@ -868,7 +1053,10 @@ class DramEngine {
         if (!resolved) {
           resolved = true;
           cleanup();
-          reject(new Error(`OpenClaw gateway exited before ready (code ${code})`));
+          const failureSummary = startupFailureLines.length > 0
+            ? `: ${startupFailureLines.join(' | ')}`
+            : '';
+          reject(new Error(`OpenClaw gateway exited before ready (code ${code})${failureSummary}`));
         }
       };
 
@@ -913,10 +1101,42 @@ class DramEngine {
     // Load existing config if present
     if (fs.existsSync(this.configPath)) {
       try {
-        const content = fs.readFileSync(this.configPath, 'utf-8');
+        const content = normalizeJsonSource(fs.readFileSync(this.configPath, 'utf-8'));
         config = JSON.parse(content);
       } catch (err) {
         console.warn('[DramEngine] Failed to load existing config:', err.message);
+      }
+    }
+
+    // Guard against Ollama config states that break or suppress implicit discovery.
+    const ollamaProvider = config?.models?.providers?.ollama;
+    const ollamaApiKeyRef = typeof ollamaProvider?.apiKey === 'string' ? ollamaProvider.apiKey.trim() : '';
+    const hasRuntimeOllamaKey = typeof process.env.OLLAMA_API_KEY === 'string' && process.env.OLLAMA_API_KEY.trim().length > 0;
+    if (ollamaApiKeyRef === '${OLLAMA_API_KEY}' && !hasRuntimeOllamaKey) {
+      delete ollamaProvider.apiKey;
+      console.warn('[DramEngine] Removed unresolved OLLAMA_API_KEY placeholder from config to prevent startup failure');
+    }
+    if (ollamaProvider && typeof ollamaProvider === 'object' && !Array.isArray(ollamaProvider)) {
+      const normalizeBaseUrl = (raw) => String(raw || '').trim().toLowerCase().replace(/\/+$/, '');
+      const baseUrl = normalizeBaseUrl(ollamaProvider.baseUrl || '');
+      const defaultBases = new Set([
+        'http://localhost:11434/v1',
+        'http://127.0.0.1:11434/v1'
+      ]);
+      const models = Array.isArray(ollamaProvider.models) ? ollamaProvider.models : [];
+      const api = String(ollamaProvider.api || '').trim().toLowerCase();
+      const apiKey = String(ollamaProvider.apiKey || '').trim();
+      const hasOnlyManagedKeys = Object.keys(ollamaProvider).every((key) => ['baseUrl', 'models', 'api', 'apiKey'].includes(key));
+      const isDefaultDiscoveryStub = hasOnlyManagedKeys
+        && models.length === 0
+        && (!api || api === 'openai-completions')
+        && (!apiKey || apiKey === '${OLLAMA_API_KEY}')
+        && (!baseUrl || defaultBases.has(baseUrl));
+      if (isDefaultDiscoveryStub) {
+        delete config.models.providers.ollama;
+        if (config.models.providers && Object.keys(config.models.providers).length === 0) delete config.models.providers;
+        if (config.models && Object.keys(config.models).length === 0) delete config.models;
+        console.warn('[DramEngine] Removed default explicit Ollama provider entry to restore implicit discovery');
       }
     }
 
@@ -992,6 +1212,14 @@ class DramEngine {
         respond(true, this._normalizeUsageFallback(req, null));
         return;
       }
+      if (this.wsUnsupportedMgmtMethods.has(req.method)) {
+        if (!isUsageMethod) {
+          this.debugLog(`[DramEngine] WS mgmt skipped for ${req.method} (known unsupported), using CLI fallback...`);
+        }
+        const result = await this._executeMgmtCLI(req);
+        respond(true, result);
+        return;
+      }
 
       // 1. Try via WebSocket first if connected
       if (this.ws && this.ws.readyState === 1) {
@@ -1006,6 +1234,14 @@ class DramEngine {
               if (isUsageMethod) {
                 respond(true, this._normalizeUsageFallback(req, null));
                 return;
+              }
+              const errorText = String(error?.message || error?.error?.message || error || '').toLowerCase();
+              if (
+                errorText.includes('unknown method')
+                || errorText.includes('method not found')
+                || (errorText.includes('invalid_request') && errorText.includes(req.method.toLowerCase()))
+              ) {
+                this.wsUnsupportedMgmtMethods.add(req.method);
               }
               this.debugLog(`[DramEngine] WS mgmt failed for ${req.method}, checking CLI fallback...`);
               this._executeMgmtCLI(req).then(res => respond(true, res)).catch(e => respond(false, null, e));
@@ -1059,7 +1295,13 @@ class DramEngine {
       // Subcommands: skills.status => skills status
       const subcommand = req.method.split('.').join(' ');
       // Note: --json is not supported by all subcommands (e.g. skills status)
-      const needsJson = req.method.includes('plugins') || req.method.includes('models') || req.method.includes('cron');
+      const needsJson = (
+        req.method.includes('plugins')
+        || req.method.includes('models')
+        || req.method.includes('cron')
+        || req.method === 'skills.check'
+        || req.method === 'skills.list'
+      );
       cliArgs.push(...subcommand.split(' '));
       if (needsJson) cliArgs.push('--json');
     }
@@ -1345,7 +1587,19 @@ class DramEngine {
     }
 
     // Intercept management methods for local or CLI handling (bypass WebSocket scope issues)
-    const mgmtMethods = ['plugins.list', 'models.list', 'skills.status', 'channels.status', 'usage.status', 'usage.cost', 'system.version', 'config.get', 'config.patch'];
+    const mgmtMethods = [
+      'plugins.list',
+      'models.list',
+      'skills.status',
+      'skills.check',
+      'skills.list',
+      'channels.status',
+      'usage.status',
+      'usage.cost',
+      'system.version',
+      'config.get',
+      'config.patch'
+    ];
     const isUsageMethod = req.method === 'usage.status' || req.method === 'usage.cost';
 
     if (mgmtMethods.includes(req.method)) {
@@ -1551,7 +1805,7 @@ class DramEngine {
   loadConfig() {
     try {
       if (!fs.existsSync(this.configPath)) return {};
-      const raw = fs.readFileSync(this.configPath, 'utf-8');
+      const raw = normalizeJsonSource(fs.readFileSync(this.configPath, 'utf-8'));
       return JSON.parse(raw);
     } catch (err) {
       console.error('[DramEngine] Failed to load config:', err.message);

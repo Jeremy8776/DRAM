@@ -314,6 +314,72 @@ export function registerSystemHandlers(ipc, windowManager, internalRequest, dram
      * Test Ollama connectivity and list available models.
      */
     ipc.handle('util:testOllamaConnection', async (_event, rawUrl) => {
+        const normalizeBase = (value: string) => String(value || '').trim().toLowerCase().replace(/\/+$/, '');
+        const defaultOllamaBases = new Set([
+            'http://localhost:11434',
+            'http://127.0.0.1:11434'
+        ]);
+
+        const collectCompatibleLocalModels = async () => {
+            try {
+                const modelsResult = await internalRequest('models.list', {}, 12000, { dedupe: false });
+                if (!modelsResult?.ok) return [];
+
+                const payload = modelsResult?.data?.models || modelsResult?.data || [];
+                if (!Array.isArray(payload)) return [];
+
+                const seen = new Set<string>();
+                const compatible = [];
+
+                for (const entry of payload) {
+                    if (!entry || typeof entry !== 'object') continue;
+                    const provider = String(entry.provider || '').trim().toLowerCase();
+                    const rawId = String(entry.key || entry.id || entry.model || '').trim();
+                    if (!rawId) continue;
+                    const normalizedId = rawId.includes('/') ? rawId : `${provider || 'unknown'}/${rawId}`;
+                    const isLocal = provider === 'ollama' || normalizedId.toLowerCase().startsWith('ollama/');
+                    if (!isLocal) continue;
+                    const dedupeKey = normalizedId.toLowerCase();
+                    if (seen.has(dedupeKey)) continue;
+                    seen.add(dedupeKey);
+                    compatible.push({
+                        id: normalizedId,
+                        name: String(entry.name || rawId).trim() || rawId
+                    });
+                }
+
+                return compatible;
+            } catch {
+                return [];
+            }
+        };
+
+        const finalizeSuccess = async (installedModels: Array<{ name: string; size: number }>, base: string) => {
+            const compatibleModels = await collectCompatibleLocalModels();
+            const installedCount = installedModels.length;
+            const compatibleCount = compatibleModels.length;
+            const normalizedBase = normalizeBase(base);
+            const isDefaultLocalEndpoint = defaultOllamaBases.has(normalizedBase);
+
+            const warnings = [];
+            if (installedCount > 0 && compatibleCount === 0) {
+                warnings.push('Ollama is reachable, but no tool-capable models are available to OpenClaw.');
+            }
+            if (!isDefaultLocalEndpoint) {
+                warnings.push('Custom endpoint is verified, but runtime local discovery uses 127.0.0.1:11434 unless explicit provider config is added.');
+            }
+
+            return {
+                ok: true,
+                endpoint: base,
+                installedModels,
+                compatibleModels,
+                installedCount,
+                compatibleCount,
+                warning: warnings.join(' ')
+            };
+        };
+
         const input = typeof rawUrl === 'string' ? rawUrl.trim() : '';
         const withProtocol = input
             ? (/^https?:\/\//i.test(input) ? input : `http://${input}`)
@@ -339,13 +405,13 @@ export function registerSystemHandlers(ipc, windowManager, internalRequest, dram
 
             if (tagsRes.ok) {
                 const tagsJson = await tagsRes.json().catch(() => ({}));
-                const models = Array.isArray(tagsJson?.models)
+                const installedModels = Array.isArray(tagsJson?.models)
                     ? tagsJson.models.map((m) => ({
                         name: m?.name || m?.model || 'unknown',
                         size: m?.size || 0
                     }))
                     : [];
-                return { ok: true, models };
+                return finalizeSuccess(installedModels, base);
             }
 
             // Fallback for OpenAI-compatible endpoint.
@@ -360,13 +426,13 @@ export function registerSystemHandlers(ipc, windowManager, internalRequest, dram
             }
 
             const modelsJson = await modelsRes.json().catch(() => ({}));
-            const models = Array.isArray(modelsJson?.data)
+            const installedModels = Array.isArray(modelsJson?.data)
                 ? modelsJson.data.map((m) => ({
                     name: m?.id || m?.name || 'unknown',
                     size: 0
                 }))
                 : [];
-            return { ok: true, models };
+            return finalizeSuccess(installedModels, base);
         } catch (err: any) {
             if (err?.name === 'AbortError') {
                 return { ok: false, error: 'Connection timed out' };

@@ -115,8 +115,16 @@ function renderMarkdown(text) {
 
     const source = String(text);
     const codeBlocks = [];
+    const svgBlocks = [];
 
-    const textWithCodePlaceholders = source.replace(/```([a-zA-Z0-9_+.-]*)[^\n]*\n([\s\S]*?)```/g, (_, language, code) => {
+    // Extract SVG blocks first to protect them from escaping
+    const textWithSvgPlaceholders = source.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {
+        const idx = svgBlocks.length;
+        svgBlocks.push(match);
+        return `@@SVGBLOCK_${idx}@@`;
+    });
+
+    const textWithCodePlaceholders = textWithSvgPlaceholders.replace(/```([a-zA-Z0-9_+.-]*)[^\n]*\n([\s\S]*?)```/g, (_, language, code) => {
         const idx = codeBlocks.length;
         codeBlocks.push({
             language,
@@ -125,7 +133,7 @@ function renderMarkdown(text) {
         return `@@CODEBLOCK_${idx}@@`;
     });
 
-    // Escape HTML after fencing so raw code can be safely re-rendered.
+    // Escape HTML after fencing so raw code and text can be safely re-rendered.
     let html = escapeHtml(textWithCodePlaceholders);
 
     // Inline code
@@ -167,6 +175,13 @@ function renderMarkdown(text) {
         const i = Number(idx);
         const block = Number.isFinite(i) ? codeBlocks[i] : null;
         return block ? renderCodeBlock(block.language, block.code) : '';
+    });
+
+    // Restore protected SVG blocks
+    html = html.replace(/@@SVGBLOCK_(\d+)@@/g, (_match, idx) => {
+        const i = Number(idx);
+        const svg = Number.isFinite(i) ? svgBlocks[i] : '';
+        return svg ? `<div class="chat-svg-container">${svg}</div>` : '';
     });
 
     return html;
@@ -310,6 +325,76 @@ export function updateTypingStatus(status, isFallback = false) {
 export function updateTypingWorklog(worklogText = '') {
     // Worklog panel intentionally disabled to avoid duplicate waiting UI.
     void worklogText;
+}
+
+let thinkingDrawerBound = false;
+function ensureThinkingDrawerEvents() {
+    if (thinkingDrawerBound) return;
+    const header = elements.thinkingHeader;
+    const drawer = elements.thinkingDrawer;
+    const btnClose = elements.btnCloseThinking;
+
+    if (header && drawer) {
+        header.addEventListener('click', (e) => {
+            // Don't toggle if clicking specific action buttons
+            if ((e.target as Element).closest('.close-thinking-btn')) return;
+            
+            drawer.classList.toggle('expanded');
+            drawer.classList.toggle('collapsed');
+        });
+
+        if (btnClose) {
+            btnClose.addEventListener('click', (e) => {
+                e.stopPropagation();
+                hideThinkingDrawer(true);
+            });
+        }
+
+        thinkingDrawerBound = true;
+    }
+}
+
+export function updateThinkingDrawer(status: string, fullContent: string) {
+    ensureThinkingDrawerEvents();
+    const drawer = document.getElementById('thinking-drawer');
+    const statusEl = document.getElementById('thinking-status-text');
+    const contentEl = document.getElementById('thinking-content');
+
+    if (!drawer) {
+        console.warn('[Renderer] Thinking drawer element not found in DOM');
+        return;
+    }
+
+    // Force visibility
+    drawer.classList.remove('hidden');
+    drawer.style.display = 'flex'; // Ensure flex layout isn't broken by display: none
+    
+    if (!drawer.classList.contains('expanded')) {
+        drawer.classList.add('collapsed');
+    }
+
+    if (statusEl) statusEl.textContent = `LOGIC: ${status.toUpperCase()}`;
+    if (contentEl) {
+        contentEl.textContent = fullContent;
+        // console.log('[Renderer] Drawer Update:', status, fullContent.length);
+        // Aggressive scroll to bottom
+        setTimeout(() => {
+            contentEl.scrollTop = contentEl.scrollHeight;
+        }, 10);
+    }
+}
+
+export function hideThinkingDrawer(force = false) {
+    const drawer = document.getElementById('thinking-drawer');
+    if (drawer) {
+        // If expanded, don't auto-hide unless forced (e.g. by a new run starting)
+        if (!force && drawer.classList.contains('expanded')) return;
+        
+        drawer.classList.add('hidden');
+        drawer.style.display = 'none';
+        drawer.classList.remove('expanded');
+        drawer.classList.add('collapsed');
+    }
 }
 
 export function clearMessages() {

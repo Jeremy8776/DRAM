@@ -30,3 +30,11 @@ Security Notes:
 - Credentials use secure local storage patterns
 - Renderer and IPC surfaces are hardened
 - Intended loopback gateway usage by default
+
+OpenClaw Docs Memory Snapshot:
+- Snapshot date: 2026-02-19
+- Source: https://docs.openclaw.ai/
+- Full corpus: memory/openclaw-docs/llms-full.txt
+- Index corpus: memory/openclaw-docs/llms.txt
+- Site map: memory/openclaw-docs/sitemap.xml
+- Integrity manifest: memory/openclaw-docs/manifest.json

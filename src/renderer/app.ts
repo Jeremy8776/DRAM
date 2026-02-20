@@ -126,8 +126,8 @@ async function init() {
       if (lower.includes('claude') || lower.includes('sonnet') || lower.includes('opus') || lower.includes('haiku')) return `anthropic/${id}`;
       if (lower.includes('gpt') || lower.includes('o1') || lower.includes('o3')) return `openai/${id}`;
       if (lower.includes('gemini') || lower.includes('antigravity')) return `google/${id}`;
-      if (lower.includes('llama') || lower.includes('groq')) return `groq/${id}`;
-      if (lower === 'ollama' || lower.includes('local')) return `ollama/${id}`;
+      if (lower.includes('groq')) return `groq/${id}`;
+      if (lower === 'ollama' || lower.includes('local') || lower.includes(':')) return `ollama/${id}`;
       return id;
     };
     const normalizeModelChain = (items, primaryModelId) => {
@@ -146,7 +146,7 @@ async function init() {
     };
 
     const cloudPrimaryId = normalizeModelId(getSetting('settings.model') || 'anthropic/claude-3-7-sonnet-latest');
-    const localPrimaryId = normalizeModelId(getSetting('settings.modelLocal') || 'ollama/ollama');
+    const localPrimaryId = normalizeModelId(getSetting('settings.modelLocal') || 'ollama/llama3:latest');
     const primaryModeLocal = Boolean(getSetting('settings.primaryModeLocal'));
     const primaryId = primaryModeLocal && localPrimaryId ? localPrimaryId : cloudPrimaryId;
     const localFallbacks = (Array.isArray(getSetting('settings.fallbackChain')) ? getSetting('settings.fallbackChain') : [])

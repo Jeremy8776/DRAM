@@ -69,6 +69,28 @@
                         <div class="input-zone">
                             <div id="preview-area" class="preview-strip"></div>
                             <div id="canvas-context-chip" class="canvas-context-chip hidden"></div>
+                            <div id="thinking-drawer" class="thinking-drawer hidden">
+                                <div class="thinking-drawer-header">
+                                    <div class="thinking-drawer-title">
+                                        <span class="status-dot pulse"></span>
+                                        <span id="thinking-status-text">LOGIC: ANALYZING</span>
+                                    </div>
+                                    <div class="thinking-drawer-actions">
+                                        <button id="btn-toggle-thinking" class="toggle-thinking-btn" title="Toggle full logic view">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="18 15 12 9 6 15"></polyline>
+                                            </svg>
+                                        </button>
+                                        <button id="btn-close-thinking" class="close-thinking-btn" title="Dismiss logic view">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="thinking-content" class="thinking-content"></div>
+                            </div>
                             <div class="command-container">
                                 <textarea id="message-input" placeholder="Ask DRAM Engine..."></textarea>
                                 <div id="voice-inline-ui" class="voice-inline-ui hidden">
@@ -99,6 +121,13 @@
                                                 <div class="panel-header">System Load // Limits</div>
                                                 <div id="rate-panel-content" class="panel-rows"></div>
                                             </div>
+                                        </div>
+                                        <div id="chat-thinking-control" class="thinking-control">
+                                            <select id="chat-thinking-select" class="thinking-control-select" title="Thinking level">
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="footer-right">

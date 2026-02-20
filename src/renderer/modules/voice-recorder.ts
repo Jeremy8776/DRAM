@@ -3,6 +3,24 @@ import { state } from './state.js';
 import { addMessage, showTypingIndicator } from './renderer.js';
 import { convertToWav } from './voice-utils.js';
 import { buildOutboundMessageWithContext } from './socket.js';
+import { getActiveModelInfo } from './rate-limits.js';
+
+function mapReasoningSettingToThinkingLevel(rawValue: unknown) {
+    const value = String(rawValue || '').trim().toLowerCase();
+    if (value === '1') return 'low';
+    if (value === '2') return 'medium';
+    if (value === '3') return 'high';
+    if (value === 'low' || value === 'off' || value === 'none' || value === 'false' || value === 'minimal') return 'low';
+    if (value === 'medium' || value === 'balanced' || value === 'normal') return 'medium';
+    if (value === 'high' || value === 'deep' || value === 'xhigh') return 'high';
+    return 'medium';
+}
+
+function resolveThinkingForModel(modelId: string, rawReasoningSetting: unknown) {
+    const normalizedModel = String(modelId || '').trim().toLowerCase();
+    if (normalizedModel.includes('gpt-5.2-chat')) return 'medium';
+    return mapReasoningSettingToThinkingLevel(rawReasoningSetting);
+}
 
 /**
  * Handles the recording stopped event.
@@ -73,6 +91,19 @@ export async function handleRecorderStopped(params) {
 
                 addMessage('user', messageText, false, true);
                 const outboundMessage = await buildOutboundMessageWithContext(messageText);
+                const activeModelInfo = getActiveModelInfo();
+                const activeModelId = activeModelInfo.id || state.currentActiveModelId || state.model || '';
+                const reasoningSetting = await window.dram.storage.get('settings.thinkLevel').catch(() => 'medium');
+                const thinkingLevel = resolveThinkingForModel(activeModelId, reasoningSetting);
+                window.dram.socket.send({
+                    type: 'req',
+                    id: `voice-think-${Date.now()}`,
+                    method: 'sessions.patch',
+                    params: {
+                        key: sessionKey,
+                        thinkingLevel
+                    }
+                });
 
                 window.dram.socket.send({
                     type: 'req',
@@ -81,7 +112,8 @@ export async function handleRecorderStopped(params) {
                     params: {
                         sessionKey: sessionKey,
                         message: outboundMessage,
-                        idempotencyKey: 'voice-' + Date.now()
+                        idempotencyKey: 'voice-' + Date.now(),
+                        thinking: thinkingLevel
                     }
                 });
                 showTypingIndicator('Assistant', `voice-${Date.now()}`);

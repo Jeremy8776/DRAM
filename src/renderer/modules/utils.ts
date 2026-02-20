@@ -116,7 +116,7 @@ export function formatCost(cost, includeSymbol = true) {
     return symbol + value;
 }
 
-import { humanizeError } from './errors.js';
+import { humanizeError, classifyErrorSource } from './errors.js';
 
 /**
  * Translate gateway error codes/messages into user-friendly chat messages.
@@ -124,7 +124,15 @@ import { humanizeError } from './errors.js';
  * Accepts either an error object { code, message } or a plain error string.
  */
 export function translateGatewayError(error) {
-    return `**${humanizeError(error)}**`;
+    const friendly = humanizeError(error);
+    const source = classifyErrorSource(error);
+    if (source === 'provider_rate_limit') {
+        return `**[Provider 429] ${friendly}**`;
+    }
+    if (source === 'local_rate_limit') {
+        return `**[Local App] ${friendly}**`;
+    }
+    return `**${friendly}**`;
 }
 
 

@@ -70,7 +70,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 /* Internal Sidebar for Dashboards */
 .dashboard-sidebar {
     width: var(--layout-pane-width);
-    background: var(--bg-base);
+    background: #000;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     flex-direction: column;
@@ -103,22 +103,23 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 }
 
 .sidebar-label {
-    padding: var(--layout-pane-nav-y) var(--layout-pane-nav-x) var(--space-2);
-    font-size: var(--text-2xs);
+    padding: var(--space-4) var(--layout-pane-nav-x) var(--space-2);
+    font-size: 9px;
     font-weight: 600;
-    color: rgba(226, 226, 231, 0.45);
+    color: rgba(226, 226, 231, 0.5);
     text-transform: uppercase;
-    letter-spacing: var(--tracking-label-wide);
+    letter-spacing: 0.18em;
 }
 
 .dashboard-nav-item {
     position: relative;
-    padding: var(--space-3) var(--layout-pane-nav-x) var(--space-3) calc(var(--layout-pane-nav-x) + 10px);
+    padding: var(--space-2) var(--layout-pane-nav-x) var(--space-2) calc(var(--layout-pane-nav-x) + 10px);
     color: var(--text-secondary);
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: var(--tracking-nav);
+    letter-spacing: 0.09em;
     font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
     cursor: pointer;
     transition: color 0.2s ease, background 0.2s ease;
     border-left: none;
@@ -155,7 +156,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--bg-base);
+    background: #000;
     overflow: hidden;
 }
 
@@ -167,7 +168,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 
 .settings-header {
     padding: var(--layout-page-header-y) var(--layout-page-header-x);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -175,12 +176,12 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 }
 
 .settings-header h1 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 500;
-    letter-spacing: var(--tracking-title);
+    letter-spacing: 0.015em;
     color: var(--text-primary);
     margin: 0 0 var(--space-1);
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .settings-header p {
@@ -194,29 +195,43 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 
 .settings-content {
     overflow: visible;
-    padding: var(--space-8) var(--layout-page-content-x);
+    padding: var(--space-5) var(--space-6) var(--space-7);
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+.settings-tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    width: 100%;
 }
 
 .settings-section {
-    margin-bottom: var(--space-8);
-    padding-bottom: var(--space-7);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    margin: 0;
+    padding: 0 0 var(--space-5);
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
 }
 
 .settings-section:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
     border-bottom: none;
 }
 
 .settings-section h2 {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: var(--tracking-section);
-    color: rgba(226, 226, 231, 0.6);
+    letter-spacing: 0.11em;
+    color: var(--text-primary);
     margin: 0;
     display: flex;
     align-items: center;
-    gap: var(--space-5);
+    gap: var(--space-3);
     flex: 1;
 }
 
@@ -224,32 +239,31 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 .section-header {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-6);
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
 .section-header h2::after {
     content: "";
     flex: 1;
     height: 1px;
-    background: var(--accent);
-    opacity: 0.4;
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.4) 0%, rgba(124, 58, 237, 0.08) 45%, transparent 100%);
 }
 
 .settings-section .section-subtitle {
-    margin: 0 0 var(--space-5);
-    max-width: 640px;
-    font-size: var(--text-xs);
-    color: rgba(226, 226, 231, 0.55);
-    line-height: 1.6;
-    letter-spacing: var(--tracking-meta);
+    margin: 0 0 var(--space-3);
+    max-width: 74ch;
+    font-size: 11px;
+    color: rgba(226, 226, 231, 0.62);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
 }
 
 .settings-section .section-content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
-    margin-top: var(--space-4);
+    gap: 10px;
+    margin-top: 0;
 }
 
 .setting-item {

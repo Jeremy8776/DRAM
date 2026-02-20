@@ -29,18 +29,60 @@ export function registerAppHandlers(ipc, secureStorage, windowManager, debugLog)
             validateString(command, 500);
 
             // 1. Block dangerous shell characters
-            const dangerousChars = [';', '&', '|', '>', '<', '`', '$', '(', ')', '\n', '\r', '\t', '"', '\''];
+            const dangerousChars = [';', '&', '|', '>', '<', '`', '$', '\n', '\r', '\t'];
             if (dangerousChars.some(char => command.includes(char))) {
                 throw new Error('Command contains forbidden shell characters for security reasons.');
             }
 
-            // 2. Security: Only allow specific commands and subcommands
-            const allowedCommands = ['dram', 'npm', 'npx', 'node'];
+            // 2. Security: Only allow specific commands and subcommands.
+            // Includes package/runtime commands used by in-app skill setup flows.
+            const allowedCommands = [
+                'dram',
+                'openclaw',
+                'wsl',
+                'npm',
+                'npx',
+                'node',
+                'cmd',
+                'cmd.exe',
+                'powershell',
+                'powershell.exe',
+                'pnpm',
+                'yarn',
+                'bun',
+                'winget',
+                'choco',
+                'chocolatey',
+                'scoop',
+                'go',
+                'uv',
+                'gh',
+                'jq',
+                'rg',
+                'ripgrep',
+                'ffmpeg',
+                'curl',
+                'python',
+                'python3',
+                'pip',
+                'pip3',
+                'brew',
+                'apt',
+                'apt-get',
+                'dnf',
+                'yum',
+                'pacman',
+                'zypper',
+                'apk',
+                'snap',
+                'cargo',
+                'dotnet'
+            ];
             const parts = command.trim().split(/\s+/);
             const baseCommand = parts[0];
 
             if (!allowedCommands.includes(baseCommand)) {
-                throw new Error('Command not in allowed list. Only dram, npm, npx, node permitted.');
+                throw new Error(`Command "${baseCommand}" is not in the allowed execution list.`);
             }
 
             // 3. For npm/npx, only allow installation/updates
@@ -52,37 +94,183 @@ export function registerAppHandlers(ipc, secureStorage, windowManager, debugLog)
                 }
             }
 
-            // 4. SEC-001: Explicit User Confirmation for shell execution
-            const win = windowManager.getMainWindow();
-            const { response } = await dialog.showMessageBox(win, {
-                type: 'warning',
-                title: 'Security Warning: Shell Execution',
-                message: 'A plugin or system component is requesting to execute a terminal command.',
-                detail: `Command: ${command}\n\nDo you trust this operation?`,
-                buttons: ['Deny', 'Allow Execution'],
-                defaultId: 0,
-                cancelId: 0,
-                noLink: true
-            });
+            if (baseCommand === 'openclaw') {
+                const subCommand = parts[1];
+                const safeSubCommands = ['doctor', 'status', 'skills', 'plugins', 'models', 'config', 'version', '--version'];
+                if (!safeSubCommands.includes(subCommand)) {
+                    throw new Error(`openclaw sub-command "${subCommand}" is not permitted for security reasons.`);
+                }
+            }
 
-            if (response !== 1) {
-                debugLog('[CLI] Execution denied by user:', command);
-                return { ok: false, error: 'Execution denied by user' };
+            if (baseCommand === 'wsl') {
+                const subCommand = parts[1] || '';
+                const safeSubCommands = ['--install', '--status', '--version', '-l', '--list', '-d', 'bash', 'sh', '-e', '--exec'];
+                if (subCommand && !safeSubCommands.includes(subCommand)) {
+                    throw new Error(`wsl sub-command "${subCommand}" is not permitted for security reasons.`);
+                }
+            }
+
+            if (baseCommand === 'winget') {
+                const subCommand = parts[1] || '';
+                const safeSubCommands = ['install', 'upgrade', 'list', 'show', 'search'];
+                if (subCommand && !safeSubCommands.includes(subCommand)) {
+                    throw new Error(`winget sub-command "${subCommand}" is not permitted for security reasons.`);
+                }
+            }
+
+            if (baseCommand === 'go') {
+                const subCommand = parts[1] || '';
+                const safeSubCommands = ['install', 'env', 'version', 'list'];
+                if (subCommand && !safeSubCommands.includes(subCommand)) {
+                    throw new Error(`go sub-command "${subCommand}" is not permitted for security reasons.`);
+                }
+            }
+
+            if (baseCommand === 'uv') {
+                const subCommand = parts[1] || '';
+                const safeSubCommands = ['tool', 'pip', 'python', 'venv', 'version', '--version'];
+                if (subCommand && !safeSubCommands.includes(subCommand)) {
+                    throw new Error(`uv sub-command "${subCommand}" is not permitted for security reasons.`);
+                }
+            }
+
+            // 4. SEC-001: Explicit User Confirmation for shell execution
+            // If the renderer already confirmed via a styled DRAM dialog, skip native prompt.
+            const uiConfirmed = options?.uiConfirmed === true;
+            if (!uiConfirmed) {
+                const win = windowManager.getMainWindow();
+                const { response } = await dialog.showMessageBox(win, {
+                    type: 'warning',
+                    title: 'Security Warning: Shell Execution',
+                    message: 'A plugin or system component is requesting to execute a terminal command.',
+                    detail: `Command: ${command}\n\nDo you trust this operation?`,
+                    buttons: ['Deny', 'Allow Execution'],
+                    defaultId: 0,
+                    cancelId: 0,
+                    noLink: true
+                });
+
+                if (response !== 1) {
+                    debugLog('[CLI] Execution denied by user:', command);
+                    return { ok: false, error: 'Execution denied by user' };
+                }
             }
 
             const { spawn } = await import('child_process');
             const platform = process.platform;
             let shellCmd, shellArgs, shellOpts;
+            const keepOpen = options?.keepOpen === true;
+            const awaitExit = options?.awaitExit === true;
+            const timeoutMs = Math.max(1000, Math.min(Number(options?.timeoutMs) || 240000, 900000));
+
+            if (awaitExit) {
+                if (platform === 'win32') {
+                    const usePowerShell = options?.usePowerShell === true;
+                    if (usePowerShell) {
+                        shellCmd = 'powershell.exe';
+                        shellArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command];
+                    } else {
+                        shellCmd = 'cmd.exe';
+                        shellArgs = ['/c', command];
+                    }
+                    shellOpts = { windowsHide: true, detached: false };
+                } else if (platform === 'darwin') {
+                    shellCmd = 'bash';
+                    shellArgs = ['-lc', command];
+                    shellOpts = { detached: false };
+                } else {
+                    shellCmd = 'bash';
+                    shellArgs = ['-lc', command];
+                    shellOpts = { detached: false };
+                }
+
+                debugLog('[CLI] Spawning (awaitExit):', shellCmd, shellArgs.join(' '));
+
+                const outputLimit = 100000;
+                const child = spawn(shellCmd, shellArgs, { ...shellOpts, stdio: ['ignore', 'pipe', 'pipe'] });
+                let stdout = '';
+                let stderr = '';
+                let timedOut = false;
+
+                if (child.stdout) {
+                    child.stdout.on('data', (chunk) => {
+                        stdout += String(chunk || '');
+                        if (stdout.length > outputLimit) stdout = stdout.slice(-outputLimit);
+                    });
+                }
+                if (child.stderr) {
+                    child.stderr.on('data', (chunk) => {
+                        stderr += String(chunk || '');
+                        if (stderr.length > outputLimit) stderr = stderr.slice(-outputLimit);
+                    });
+                }
+
+                const exitCode = await new Promise<number>((resolve, reject) => {
+                    const timer = setTimeout(() => {
+                        timedOut = true;
+                        try { child.kill(); } catch { }
+                    }, timeoutMs);
+
+                    child.once('error', (err) => {
+                        clearTimeout(timer);
+                        reject(err);
+                    });
+
+                    child.once('close', (code) => {
+                        clearTimeout(timer);
+                        resolve(typeof code === 'number' ? code : 1);
+                    });
+                });
+
+                if (timedOut) {
+                    return {
+                        ok: false,
+                        error: `Command timed out after ${Math.round(timeoutMs / 1000)}s`,
+                        timedOut: true,
+                        exitCode,
+                        stdout: String(stdout || '').trim(),
+                        stderr: String(stderr || '').trim(),
+                        platform,
+                        shell: shellCmd
+                    };
+                }
+
+                const trimmedStdout = String(stdout || '').trim();
+                const trimmedStderr = String(stderr || '').trim();
+                return {
+                    ok: exitCode === 0,
+                    exitCode,
+                    stdout: trimmedStdout,
+                    stderr: trimmedStderr,
+                    error: exitCode === 0 ? '' : (trimmedStderr || `Command failed with exit code ${exitCode}`),
+                    platform,
+                    shell: shellCmd
+                };
+            }
 
             // Platform-specific terminal spawning
             if (platform === 'win32') {
-                const usePowerShell = options.usePowerShell || false;
+                const usePowerShell = options?.usePowerShell === true || (keepOpen && baseCommand === 'openclaw');
                 if (usePowerShell) {
-                    shellCmd = 'powershell.exe';
-                    shellArgs = ['-Command', command];
+                    if (keepOpen) {
+                        // Launch a separate persistent PowerShell window.
+                        const persistentCommand = `${command}; Write-Host ''; Write-Host 'Press Enter to close...'; Read-Host | Out-Null`;
+                        shellCmd = 'cmd.exe';
+                        shellArgs = ['/c', 'start', '""', 'powershell.exe', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', persistentCommand];
+                    } else {
+                        shellCmd = 'powershell.exe';
+                        shellArgs = ['-Command', command];
+                    }
                 } else {
-                    shellCmd = 'cmd.exe';
-                    shellArgs = ['/c', command];
+                    if (keepOpen) {
+                        // Launch a separate persistent CMD window.
+                        const persistentCommand = `${command} & echo. & echo Press any key to close... & pause >nul`;
+                        shellCmd = 'cmd.exe';
+                        shellArgs = ['/c', 'start', '""', 'cmd.exe', '/K', persistentCommand];
+                    } else {
+                        shellCmd = 'cmd.exe';
+                        shellArgs = ['/c', command];
+                    }
                 }
                 shellOpts = { windowsHide: false, detached: true };
             } else if (platform === 'darwin') {

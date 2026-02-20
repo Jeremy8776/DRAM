@@ -20,6 +20,7 @@ export async function syncAuthProfiles({
             anthropic: normalizeSecretValue(getSettingValue(state, 'apiKeyAnthropic')),
             openai: normalizeSecretValue(getSettingValue(state, 'apiKeyOpenAI')),
             google: normalizeSecretValue(getSettingValue(state, 'apiKeyGoogle')),
+            ollama: normalizeSecretValue(getSettingValue(state, 'apiKeyOllama')),
             groq: normalizeSecretValue(getSettingValue(state, 'apiKeyGroq'))
         };
 
@@ -68,6 +69,7 @@ export async function syncAuthProfiles({
         forEachAuthAlias('anthropic', (profileId, provider) => updateProfile(provider, profileId, apiKeys.anthropic));
         forEachAuthAlias('openai', (profileId, provider) => updateProfile(provider, profileId, apiKeys.openai));
         forEachAuthAlias('google', (profileId, provider) => updateProfile(provider, profileId, apiKeys.google));
+        forEachAuthAlias('ollama', (profileId, provider) => updateProfile(provider, profileId, apiKeys.ollama));
         forEachAuthAlias('groq', (profileId, provider) => updateProfile(provider, profileId, apiKeys.groq));
 
         const writtenPaths = [];

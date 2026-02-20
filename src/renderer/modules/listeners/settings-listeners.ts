@@ -38,7 +38,7 @@ const normalizeHealthChecks = (health) => {
     }
     if (components.memory) {
         const memoryDetail = health.memory
-            ? `RSS ${health.memory.rss || 'n/a'} • Heap ${health.memory.heapUsed || 'n/a'}`
+            ? `RSS ${health.memory.rss || 'n/a'} - Heap ${health.memory.heapUsed || 'n/a'}`
             : 'Memory usage';
         checks.push({
             name: 'Memory',
@@ -50,11 +50,244 @@ const normalizeHealthChecks = (health) => {
     return checks;
 };
 
-export function setupSettingsListeners(on) {
-    // ═══════════════════════════════════════════
-    // NAVIGATION LISTENERS
-    // ═══════════════════════════════════════════
+const INTERNET_ACCESS_MODES = new Set(['open', 'limited', 'offline']);
+const WEB_SEARCH_PROVIDERS = new Set(['brave', 'perplexity']);
+const DEVICE_ACCESS_POLICIES = new Set(['manual', 'auto-allow', 'block']);
+let deviceAccessPollHandle: ReturnType<typeof setInterval> | null = null;
+let enforcingDeviceAccessPolicy = false;
 
+function showInternetAccessStatus(message: string, type = 'info') {
+    const el = document.getElementById('internet-access-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `setting-status-indicator ${type}`;
+    el.style.opacity = '1';
+    setTimeout(() => {
+        el.style.opacity = '0';
+    }, 3500);
+}
+
+function showDmPolicyStatus(message: string, type = 'info') {
+    const el = document.getElementById('dm-policy-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `setting-status-indicator ${type}`;
+    el.style.opacity = '1';
+    setTimeout(() => {
+        el.style.opacity = '0';
+    }, 3500);
+}
+
+function showWebSearchStatus(message: string, type = 'info') {
+    const el = document.getElementById('web-search-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `setting-status-indicator ${type}`;
+    el.style.opacity = '1';
+    setTimeout(() => {
+        el.style.opacity = '0';
+    }, 3500);
+}
+
+function showWhatsappOutboundStatus(message: string, type = 'info') {
+    const el = document.getElementById('whatsapp-outbound-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `setting-status-indicator ${type}`;
+    el.style.opacity = '1';
+    setTimeout(() => {
+        el.style.opacity = '0';
+    }, 3500);
+}
+
+function showDeviceAccessStatus(message: string, type = 'info') {
+    const el = document.getElementById('device-access-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `setting-status-indicator ${type}`;
+    el.style.opacity = '1';
+    setTimeout(() => {
+        el.style.opacity = '0';
+    }, 3500);
+}
+
+function resolveInternetAccessMode(rawMode: string, primaryModeLocal: boolean, webToolsSetting: unknown) {
+    const normalized = String(rawMode || '').trim().toLowerCase();
+    if (INTERNET_ACCESS_MODES.has(normalized)) return normalized;
+    if (primaryModeLocal) return 'offline';
+    if (typeof webToolsSetting === 'boolean') return webToolsSetting ? 'open' : 'limited';
+    return 'open';
+}
+
+async function applyInternetAccessMode(mode: string) {
+    const normalizedMode = resolveInternetAccessMode(mode, false, true);
+    await window.dram.storage.set('settings.internetAccessMode', normalizedMode);
+
+    const primaryModeToggle = document.getElementById('setting-primary-mode-local') as HTMLInputElement | null;
+    const shouldUseLocalPrimary = normalizedMode === 'offline';
+    if (primaryModeToggle && primaryModeToggle.checked !== shouldUseLocalPrimary) {
+        primaryModeToggle.checked = shouldUseLocalPrimary;
+        primaryModeToggle.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+        await window.dram.storage.set('settings.primaryModeLocal', shouldUseLocalPrimary);
+    }
+
+    const webToolsEnabled = normalizedMode === 'open';
+    await window.dram.storage.set('settings.webTools', webToolsEnabled);
+    if (elements.settingWebTools) elements.settingWebTools.checked = webToolsEnabled;
+
+    if (normalizedMode === 'open') {
+        showInternetAccessStatus('Internet mode: Open (cloud + web tools)', 'success');
+    } else if (normalizedMode === 'limited') {
+        showInternetAccessStatus('Internet mode: Limited (cloud only, web tools off)', 'info');
+    } else {
+        showInternetAccessStatus('Internet mode: Offline (local model routing)', 'warning');
+    }
+}
+
+function normalizeDeviceAccessPolicy(rawPolicy: string) {
+    const normalized = String(rawPolicy || '').trim().toLowerCase();
+    return DEVICE_ACCESS_POLICIES.has(normalized) ? normalized : 'manual';
+}
+
+function isPendingDeviceStatus(rawStatus: string) {
+    const status = String(rawStatus || '').trim().toLowerCase();
+    return status === 'pending' || status === 'requested' || status === 'awaiting_approval';
+}
+
+async function syncDeviceAccessPolicyControl() {
+    const select = document.getElementById('setting-device-access-policy') as HTMLSelectElement | null;
+    if (!select) return 'manual';
+    const storedPolicy = normalizeDeviceAccessPolicy(String(await window.dram.storage.get('settings.deviceAccessPolicy') || 'manual'));
+    select.value = storedPolicy;
+    return storedPolicy;
+}
+
+async function enforceDeviceAccessPolicy(silent = true) {
+    if (enforcingDeviceAccessPolicy) return;
+    enforcingDeviceAccessPolicy = true;
+    try {
+        const policy = normalizeDeviceAccessPolicy(String(await window.dram.storage.get('settings.deviceAccessPolicy') || 'manual'));
+        if (policy === 'manual') return;
+
+        const devices = await window.dram.util.getDevices();
+        const pendingDevices = (Array.isArray(devices) ? devices : []).filter((device) => isPendingDeviceStatus(device?.status));
+        if (pendingDevices.length === 0) return;
+
+        let processedCount = 0;
+        for (const device of pendingDevices) {
+            const deviceId = String(device?.id || '').trim();
+            if (!deviceId) continue;
+            try {
+                if (policy === 'auto-allow') {
+                    await window.dram.util.approveDevice(deviceId);
+                } else if (policy === 'block') {
+                    await window.dram.util.rejectDevice(deviceId);
+                }
+                processedCount += 1;
+            } catch (err) {
+                console.warn('Device access policy action failed:', err);
+            }
+        }
+
+        if (processedCount > 0) {
+            if (policy === 'auto-allow') {
+                showDeviceAccessStatus(`Auto-approved ${processedCount} pending device request${processedCount > 1 ? 's' : ''}.`, 'success');
+            } else {
+                showDeviceAccessStatus(`Blocked ${processedCount} pending device request${processedCount > 1 ? 's' : ''}.`, 'warning');
+            }
+            try {
+                const refreshedDevices = await window.dram.util.getDevices();
+                const { updateConnectionsDevicesList } = await import('../../components/settings/tabs/connections.js');
+                updateConnectionsDevicesList(Array.isArray(refreshedDevices) ? refreshedDevices : []);
+            } catch (refreshErr) {
+                console.warn('Failed to refresh device list after policy action:', refreshErr);
+            }
+            if (!silent) {
+                showToast({
+                    message: policy === 'auto-allow'
+                        ? `Approved ${processedCount} pending device request${processedCount > 1 ? 's' : ''}`
+                        : `Blocked ${processedCount} pending device request${processedCount > 1 ? 's' : ''}`,
+                    type: policy === 'auto-allow' ? 'success' : 'warning'
+                });
+            }
+        }
+    } catch (err) {
+        console.warn('Failed to enforce device access policy:', err);
+    } finally {
+        enforcingDeviceAccessPolicy = false;
+    }
+}
+
+function ensureDeviceAccessPolicyPolling() {
+    if (deviceAccessPollHandle) return;
+    deviceAccessPollHandle = setInterval(() => {
+        void enforceDeviceAccessPolicy(true);
+    }, 7000);
+}
+
+async function syncInternetAccessModeControl() {
+    const accessModeSelect = document.getElementById('setting-internet-access-mode') as HTMLSelectElement | null;
+    if (!accessModeSelect) return;
+
+    const primaryModeLocal = Boolean((document.getElementById('setting-primary-mode-local') as HTMLInputElement | null)?.checked);
+    const webToolsSetting = await window.dram.storage.get('settings.webTools');
+    const storedMode = String(await window.dram.storage.get('settings.internetAccessMode') || '').trim().toLowerCase();
+    const nextMode = resolveInternetAccessMode(storedMode, primaryModeLocal, webToolsSetting);
+    accessModeSelect.value = nextMode;
+    if (nextMode !== storedMode) {
+        await window.dram.storage.set('settings.internetAccessMode', nextMode);
+    }
+}
+
+function applyPrimaryModelState(modelId: string, modelName: string) {
+    const id = String(modelId || '').trim();
+    if (!id) return;
+    const name = String(modelName || id).trim() || id;
+
+    state.modelRoutingMode = 'auto';
+    state.manualModelId = null;
+    state.models.primary.id = id;
+    state.models.primary.name = name;
+    state.currentActiveModelId = id;
+    state.model = id;
+    if (elements.currentModel) elements.currentModel.textContent = name;
+    refreshMainDisplay();
+
+    void import('../model-capabilities.js').then((m) => {
+        m.invalidateModelCapabilityCache?.();
+        m.refreshAttachButtonCapabilityHint?.(true);
+    });
+}
+
+async function syncPrimaryModelToGateway() {
+    const primaryModeLocal = Boolean((document.getElementById('setting-primary-mode-local') as HTMLInputElement | null)?.checked);
+    const cloudSelect = document.getElementById('setting-model') as HTMLSelectElement | null;
+    const localSelect = document.getElementById('setting-model-local') as HTMLSelectElement | null;
+
+    const cloudModelId = String(cloudSelect?.value || '').trim();
+    const localModelId = String(localSelect?.value || '').trim();
+    const nextPrimaryModel = primaryModeLocal ? localModelId : cloudModelId;
+    if (!nextPrimaryModel) return;
+
+    const patch: any = {
+        agents: { defaults: { model: { primary: nextPrimaryModel } } }
+    };
+    if (primaryModeLocal) {
+        // Prevent local mode from silently falling back to cloud providers.
+        patch.agents.defaults.model.fallbacks = [];
+    }
+
+    try {
+        await window.dram.gateway.patchConfig(patch);
+        return true;
+    } catch (err) {
+        console.warn('Failed to sync primary model to gateway:', err);
+        return false;
+    }
+}
+
+export function setupSettingsListeners(on) {
     const navItems: HTMLElement[] = Array.from((elements.toolNavItems || []) as HTMLElement[]);
     if (elements.btnSettings && !navItems.includes(elements.btnSettings)) {
         navItems.push(elements.btnSettings);
@@ -128,10 +361,6 @@ export function setupSettingsListeners(on) {
         if (chatBtn) chatBtn.click();
     });
 
-    // ═══════════════════════════════════════════
-    // TAB NAVIGATION
-    // ═══════════════════════════════════════════
-
     elements.navItems?.forEach(item => {
         on(item, 'click', async () => {
             const tabId = item.getAttribute('data-tab');
@@ -151,8 +380,36 @@ export function setupSettingsListeners(on) {
                 await refreshModelsUI({ force: true });
             }
 
-            if (tabId === 'tab-hardware') {
+            if (tabId === 'tab-hardware' || tabId === 'tab-voice') {
                 await populateAudioDevices();
+            }
+
+            if (tabId === 'tab-connections') {
+                try {
+                    const channels = await window.dram.util.getChannels();
+                    const devices = await window.dram.util.getDevices();
+                    const { updateConnectionsChannelsList, updateConnectionsDevicesList } = await import('../../components/settings/tabs/connections.js');
+                    updateConnectionsChannelsList(Array.isArray(channels) ? channels : []);
+                    updateConnectionsDevicesList(Array.isArray(devices) ? devices : []);
+                    await syncInternetAccessModeControl();
+                    const outboundEnabled = (await window.dram.storage.get('settings.whatsappOutboundEnabled')) === true;
+                    if (outboundEnabled) {
+                        showWhatsappOutboundStatus('WhatsApp outbound replies are enabled.', 'success');
+                    } else {
+                        showWhatsappOutboundStatus('WhatsApp outbound replies are blocked.', 'warning');
+                    }
+                    const policy = await syncDeviceAccessPolicyControl();
+                    if (policy === 'manual') {
+                        showDeviceAccessStatus('Device policy: Manual review', 'info');
+                    } else if (policy === 'auto-allow') {
+                        showDeviceAccessStatus('Device policy: Auto Allow enabled', 'success');
+                    } else {
+                        showDeviceAccessStatus('Device policy: Block enabled', 'warning');
+                    }
+                    await enforceDeviceAccessPolicy(true);
+                } catch (err) {
+                    console.warn('Failed to refresh connected channels/devices:', err);
+                }
             }
 
             if (tabId === 'tab-logs') {
@@ -187,11 +444,6 @@ export function setupSettingsListeners(on) {
         });
     });
 
-    // ═══════════════════════════════════════════
-    // GENERAL SETTINGS
-    // ═══════════════════════════════════════════
-
-    // Audio Input Handler (delegated)
     document.addEventListener('change', async (e) => {
         if (e.target.id === 'setting-audio-input') {
             await window.dram.storage.set('settings.audioInputDeviceId', e.target.value);
@@ -221,8 +473,8 @@ export function setupSettingsListeners(on) {
     // API Vault persistence
     document.addEventListener('change', async (e) => {
         if (e.target.id === 'setting-ollama-host') {
-            await window.dram.storage.set('settings.ollamaHost', e.target.value.trim());
-            showToast({ message: 'Ollama host updated', type: 'info' });
+            const host = e.target.value.trim();
+            await window.dram.storage.set('settings.ollamaHost', host);
         }
     });
 
@@ -234,26 +486,125 @@ export function setupSettingsListeners(on) {
         }
     });
 
-    // ═══════════════════════════════════════════
-    // MODEL SETTINGS
-    // ═══════════════════════════════════════════
+    // Connections: internet/device access mode
+    document.addEventListener('change', async (e) => {
+        if (e.target.id === 'setting-internet-access-mode') {
+            try {
+                await applyInternetAccessMode(e.target.value);
+                showToast({ message: `Internet mode updated: ${e.target.options[e.target.selectedIndex]?.text || e.target.value}`, type: 'success' });
+            } catch (err) {
+                console.error('Failed to apply internet access mode:', err);
+                showInternetAccessStatus(`Failed to apply internet mode: ${err?.message || err}`, 'error');
+                showToast({ message: 'Failed to apply internet mode', type: 'error' });
+            }
+        }
+    });
+
+    // Connections: web search provider
+    document.addEventListener('change', async (e) => {
+        if (e.target.id === 'setting-web-search-provider') {
+            try {
+                const providerRaw = String(e.target.value || '').trim().toLowerCase();
+                const provider = WEB_SEARCH_PROVIDERS.has(providerRaw) ? providerRaw : 'brave';
+                await window.dram.storage.set('settings.webSearchProvider', provider);
+                const providerLabel = provider === 'perplexity' ? 'Perplexity' : 'Brave';
+                showWebSearchStatus(`Web search provider set to ${providerLabel}.`, 'success');
+                showToast({ message: `Web search provider updated: ${providerLabel}`, type: 'success' });
+            } catch (err) {
+                console.error('Failed to update web search provider:', err);
+                showWebSearchStatus(`Failed to update web search provider: ${err?.message || err}`, 'error');
+                showToast({ message: 'Failed to update web search provider', type: 'error' });
+            }
+        }
+    });
+
+    // Connections: device pairing access mode
+    document.addEventListener('change', async (e) => {
+        if (e.target.id === 'setting-device-access-policy') {
+            try {
+                const policy = normalizeDeviceAccessPolicy(e.target.value);
+                await window.dram.storage.set('settings.deviceAccessPolicy', policy);
+                await syncDeviceAccessPolicyControl();
+                if (policy === 'manual') {
+                    showDeviceAccessStatus('Device policy set to Manual review.', 'info');
+                    showToast({ message: 'Device access policy updated: Manual', type: 'info' });
+                } else if (policy === 'auto-allow') {
+                    showDeviceAccessStatus('Device policy set to Auto Allow.', 'success');
+                    showToast({ message: 'Device access policy updated: Auto Allow', type: 'success' });
+                } else {
+                    showDeviceAccessStatus('Device policy set to Block.', 'warning');
+                    showToast({ message: 'Device access policy updated: Block', type: 'warning' });
+                }
+                await enforceDeviceAccessPolicy(false);
+            } catch (err) {
+                console.error('Failed to apply device access policy:', err);
+                showDeviceAccessStatus(`Failed to apply device policy: ${err?.message || err}`, 'error');
+                showToast({ message: 'Failed to apply device access policy', type: 'error' });
+            }
+        }
+    });
+
+    // Connections: WhatsApp DM policy
+    document.addEventListener('change', async (e) => {
+        if (e.target.id === 'setting-dm-policy') {
+            try {
+                const policy = String(e.target.value || '').trim().toLowerCase() || 'open';
+                await window.dram.storage.set('settings.dmPolicy', policy);
+                if (policy === 'open') {
+                    showDmPolicyStatus('DM policy set to Open. Pairing prompts are disabled.', 'success');
+                } else if (policy === 'pairing') {
+                    showDmPolicyStatus('DM policy set to Pairing. Unknown senders will receive approval codes.', 'warning');
+                } else if (policy === 'allowlist') {
+                    showDmPolicyStatus('DM policy set to Allowlist. Configure WhatsApp allowFrom entries.', 'info');
+                } else {
+                    showDmPolicyStatus('DM policy set to Disabled. Inbound WhatsApp DMs are blocked.', 'warning');
+                }
+                showToast({ message: `WhatsApp DM policy updated: ${policy}`, type: 'info' });
+            } catch (err) {
+                console.error('Failed to update DM policy:', err);
+                showDmPolicyStatus(`Failed to update DM policy: ${err?.message || err}`, 'error');
+                showToast({ message: 'Failed to update DM policy', type: 'error' });
+            }
+        }
+    });
+
+    // Connections: WhatsApp outbound reply policy
+    document.addEventListener('change', async (e) => {
+        if (e.target.id === 'setting-whatsapp-outbound-enabled') {
+            try {
+                const enabled = Boolean(e.target.checked);
+                await window.dram.storage.set('settings.whatsappOutboundEnabled', enabled);
+                if (enabled) {
+                    showWhatsappOutboundStatus('WhatsApp outbound replies are enabled.', 'success');
+                    showToast({ message: 'WhatsApp outbound replies enabled', type: 'success' });
+                } else {
+                    showWhatsappOutboundStatus('WhatsApp outbound replies are blocked.', 'warning');
+                    showToast({ message: 'WhatsApp outbound replies blocked', type: 'warning' });
+                }
+            } catch (err) {
+                console.error('Failed to update WhatsApp outbound policy:', err);
+                showWhatsappOutboundStatus(`Failed to update outbound policy: ${err?.message || err}`, 'error');
+                showToast({ message: 'Failed to update WhatsApp outbound policy', type: 'error' });
+            }
+        }
+    });
 
     on(elements.settingModel, 'change', async (e) => {
         const modelId = e.target.value;
         const modelName = e.target.options[e.target.selectedIndex].text;
         await window.dram.storage.set('settings.model', modelId);
+        const synced = await syncPrimaryModelToGateway();
+        if (!synced) {
+            showToast({ message: 'Cloud model saved, but gateway sync failed', type: 'warning' });
+            return;
+        }
 
         const isLocalPrimary = document.getElementById('setting-primary-mode-local')?.checked || false;
         if (!isLocalPrimary) {
-            state.modelRoutingMode = 'auto';
-            state.manualModelId = null;
-            state.models.primary.id = modelId;
-            state.models.primary.name = modelName;
-            state.currentActiveModelId = modelId;
-            state.model = modelId;
-            if (elements.currentModel) elements.currentModel.textContent = modelName;
-            refreshMainDisplay();
+            applyPrimaryModelState(modelId, modelName);
         }
+        const { updateThinkingPreview } = await import('../../components/settings/tabs/model.js');
+        updateThinkingPreview(modelId);
         showToast({ message: `Cloud model updated to ${modelName}`, type: 'success' });
 
         const { showModelStatus } = await import('../../components/settings/tabs/model.js');
@@ -265,6 +616,9 @@ export function setupSettingsListeners(on) {
         if (e.target.id === 'setting-primary-mode-local') {
             const enabled = e.target.checked;
             await window.dram.storage.set('settings.primaryModeLocal', enabled);
+            if (enabled) {
+                await refreshModelsUI({ force: true });
+            }
 
             const { updatePrimaryModeUI } = await import('../../components/settings/tabs/model.js');
             updatePrimaryModeUI();
@@ -274,15 +628,16 @@ export function setupSettingsListeners(on) {
             if (targetSelect && targetSelect.options[targetSelect.selectedIndex]) {
                 const modelId = targetSelect.value;
                 const modelName = targetSelect.options[targetSelect.selectedIndex].text;
-                state.modelRoutingMode = 'auto';
-                state.manualModelId = null;
-                state.models.primary.id = modelId;
-                state.models.primary.name = modelName;
-                state.currentActiveModelId = modelId;
-                state.model = modelId;
-                if (elements.currentModel) elements.currentModel.textContent = modelName;
-                refreshMainDisplay();
+                applyPrimaryModelState(modelId, modelName);
+                const { updateThinkingPreview } = await import('../../components/settings/tabs/model.js');
+                updateThinkingPreview(modelId);
             }
+            const synced = await syncPrimaryModelToGateway();
+            if (!synced) {
+                showToast({ message: 'Primary mode saved, but gateway sync failed', type: 'warning' });
+                return;
+            }
+            await syncInternetAccessModeControl();
 
             showToast({ message: `Primary mode: ${enabled ? 'Local' : 'Cloud'}`, type: 'info' });
         }
@@ -291,18 +646,18 @@ export function setupSettingsListeners(on) {
             const modelId = e.target.value;
             const modelName = e.target.options[e.target.selectedIndex].text;
             await window.dram.storage.set('settings.modelLocal', modelId);
+            const synced = await syncPrimaryModelToGateway();
+            if (!synced) {
+                showToast({ message: 'Local model saved, but gateway sync failed', type: 'warning' });
+                return;
+            }
 
             const isLocalPrimary = document.getElementById('setting-primary-mode-local')?.checked || false;
             if (isLocalPrimary) {
-                state.modelRoutingMode = 'auto';
-                state.manualModelId = null;
-                state.models.primary.id = modelId;
-                state.models.primary.name = modelName;
-                state.currentActiveModelId = modelId;
-                state.model = modelId;
-                if (elements.currentModel) elements.currentModel.textContent = modelName;
-                refreshMainDisplay();
+                applyPrimaryModelState(modelId, modelName);
             }
+            const { updateThinkingPreview } = await import('../../components/settings/tabs/model.js');
+            updateThinkingPreview(modelId);
             showToast({ message: `Local model updated to ${modelName}`, type: 'success' });
         }
     });
@@ -320,19 +675,18 @@ export function setupSettingsListeners(on) {
     });
 
     on(elements.settingThink, 'change', async (e) => {
-        const value = e.target.value;
+        const rawValue = String(e.target.value || '').trim().toLowerCase();
+        const value = rawValue === 'high' || rawValue === '3' ? 'high'
+            : rawValue === 'low' || rawValue === '1' ? 'low'
+                : 'medium';
         await window.dram.storage.set('settings.thinkLevel', value);
 
         const { updateThinkingPreview } = await import('../../components/settings/tabs/model.js');
-        updateThinkingPreview();
+        updateThinkingPreview(state.currentActiveModelId);
 
-        const levelNames = { '1': 'Direct', '2': 'Balanced', '3': 'Deep Analysis' };
+        const levelNames = { low: 'Low', medium: 'Medium', high: 'High' };
         showToast({ message: `Reasoning depth: ${levelNames[value] || value}`, type: 'info' });
     });
-
-    // ═══════════════════════════════════════════
-    // GENERAL APP SETTINGS
-    // ═══════════════════════════════════════════
 
     on(elements.settingAutoConnect, 'change', async (e) => {
         await window.dram.storage.set('settings.autoConnect', e.target.checked);
@@ -348,10 +702,6 @@ export function setupSettingsListeners(on) {
         const { updateAdvancedModeUI } = await import('../settings.js');
         updateAdvancedModeUI(enabled);
     });
-
-    // ═══════════════════════════════════════════
-    // FACTORY RESET
-    // ═══════════════════════════════════════════
 
     on(elements.btnClearAll, 'click', async () => {
         const confirmed = await showConfirmDialog({
@@ -373,9 +723,9 @@ export function setupSettingsListeners(on) {
         }
     });
 
-    // ═══════════════════════════════════════════
-    // SPECIALIZED LISTENERS (from sub-modules)
-    // ═══════════════════════════════════════════
+    ensureDeviceAccessPolicyPolling();
+    void syncDeviceAccessPolicyControl();
+    void enforceDeviceAccessPolicy(true);
 
     // API Keys & Gateway
     setupApiKeyListeners();

@@ -74,10 +74,12 @@ export function getProviderFromModel(model) {
         const normalized = normalizeProvider(provider);
         if (normalized !== 'unknown') return normalized;
     }
-    if (model.includes('claude') || model.includes('sonnet') || model.includes('opus') || model.includes('haiku')) return 'anthropic';
-    if (model.includes('gpt') || model.includes('o1')) return 'openai';
-    if (model.includes('gemini')) return 'google';
-    if (model.includes('llama') || model.includes('groq')) return 'groq';
+    const normalizedModel = String(model).toLowerCase();
+    if (normalizedModel.includes('claude') || normalizedModel.includes('sonnet') || normalizedModel.includes('opus') || normalizedModel.includes('haiku')) return 'anthropic';
+    if (normalizedModel.includes('gpt') || normalizedModel.includes('o1') || normalizedModel.includes('o3')) return 'openai';
+    if (normalizedModel.includes('gemini')) return 'google';
+    if (normalizedModel.includes('groq')) return 'groq';
+    if (normalizedModel.includes('ollama') || normalizedModel.includes(':')) return 'ollama';
     return 'unknown';
 }
 
